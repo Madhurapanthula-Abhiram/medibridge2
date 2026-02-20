@@ -1,22 +1,20 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import './Auth.css';
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  // 'login' | 'signup' | 'forgot'
+  const [mode, setMode] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, signup } = useAuth();
+  const { login, signup, forgotPassword } = useAuth();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -24,51 +22,43 @@ const Auth = () => {
   };
 
   const validateForm = () => {
-    if (!isLogin && !formData.name.trim()) {
-      return 'Name is required';
-    }
-    if (!formData.email.trim()) {
-      return 'Email is required';
-    }
-    if (!formData.password) {
-      return 'Password is required';
-    }
-    if (!isLogin && formData.password.length < 6) {
-      return 'Password must be at least 6 characters';
-    }
-    if (!isLogin && formData.password !== formData.confirmPassword) {
-      return 'Passwords do not match';
-    }
+    if (mode === 'signup' && !formData.name.trim()) return 'Name is required';
+    if (!formData.email.trim()) return 'Email is required';
+    if (mode !== 'forgot' && !formData.password) return 'Password is required';
+    if (mode === 'signup' && formData.password.length < 6) return 'Password must be at least 6 characters';
+    if (mode === 'signup' && formData.password !== formData.confirmPassword) return 'Passwords do not match';
     return '';
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
+    if (validationError) { setError(validationError); return; }
 
     setLoading(true);
     setError('');
     setSuccess('');
 
-    if (isLogin) {
+    if (mode === 'login') {
       const result = await login(formData.email, formData.password);
-      if (!result.success) {
+      if (result.success) {
+        navigate('/');
+      } else {
         setError(result.error);
       }
-    } else {
-      const result = await signup({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-      });
+    } else if (mode === 'signup') {
+      const result = await signup({ name: formData.name, email: formData.email, password: formData.password });
       if (result.success) {
-        setSuccess(result.message || 'Account created successfully! Please check your email to verify.');
-        setIsLogin(true);
+        setSuccess(result.message);
+        setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+        setMode('login');
+      } else {
+        setError(result.error);
+      }
+    } else if (mode === 'forgot') {
+      const result = await forgotPassword(formData.email);
+      if (result.success) {
+        setSuccess(result.message);
         setFormData({ name: '', email: '', password: '', confirmPassword: '' });
       } else {
         setError(result.error);
@@ -78,17 +68,31 @@ const Auth = () => {
     setLoading(false);
   };
 
+  const switchMode = (newMode) => {
+    setMode(newMode);
+    setError('');
+    setSuccess('');
+    setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+  };
+
+  const titles = {
+    login: 'Welcome Back',
+    signup: 'Create Account',
+    forgot: 'Reset Password'
+  };
+  const subtitles = {
+    login: 'Sign in to access your health profile and saved predictions.',
+    signup: 'Join MediBridge to get personalized health insights and connect with doctors.',
+    forgot: 'Enter your email and we\'ll send you a reset link.'
+  };
+
   return (
     <section className="auth-section">
       <div className="auth-container">
         <div className="auth-card">
           <div className="auth-header">
-            <h1>{isLogin ? 'Welcome Back' : 'Create Account'}</h1>
-            <p>
-              {isLogin 
-                ? 'Sign in to access your health profile and saved predictions.' 
-                : 'Join MediBridge to get personalized health insights and connect with doctors.'}
-            </p>
+            <h1>{titles[mode]}</h1>
+            <p>{subtitles[mode]}</p>
           </div>
 
           {error && (
@@ -106,122 +110,79 @@ const Auth = () => {
           )}
 
           <form onSubmit={handleSubmit} className="auth-form">
-            {!isLogin && (
+            {mode === 'signup' && (
               <div className="form-group">
-                <label htmlFor="name">
-                  <FiUser />
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Enter your full name"
-                />
+                <label htmlFor="name"><FiUser /> Full Name</label>
+                <input type="text" id="name" name="name" value={formData.name}
+                  onChange={handleChange} placeholder="Enter your full name" />
               </div>
             )}
 
             <div className="form-group">
-              <label htmlFor="email">
-                <FiMail />
-                Email Address
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="Enter your email"
-              />
+              <label htmlFor="email"><FiMail /> Email Address</label>
+              <input type="email" id="email" name="email" value={formData.email}
+                onChange={handleChange} placeholder="Enter your email" />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="password">
-                <FiLock />
-                Password
-              </label>
-              <div className="password-input">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder={isLogin ? 'Enter your password' : 'Create a password'}
-                />
-                <button
-                  type="button"
-                  className="toggle-password"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <FiEyeOff /> : <FiEye />}
+            {mode !== 'forgot' && (
+              <div className="form-group">
+                <label htmlFor="password"><FiLock /> Password</label>
+                <div className="password-input">
+                  <input type={showPassword ? 'text' : 'password'} id="password" name="password"
+                    value={formData.password} onChange={handleChange}
+                    placeholder={mode === 'login' ? 'Enter your password' : 'Create a password'} />
+                  <button type="button" className="toggle-password"
+                    onClick={() => setShowPassword(!showPassword)}>
+                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {mode === 'signup' && (
+              <div className="form-group">
+                <label htmlFor="confirmPassword"><FiLock /> Confirm Password</label>
+                <input type={showPassword ? 'text' : 'password'} id="confirmPassword"
+                  name="confirmPassword" value={formData.confirmPassword}
+                  onChange={handleChange} placeholder="Confirm your password" />
+              </div>
+            )}
+
+            {mode === 'login' && (
+              <div className="form-options">
+                <button type="button" className="forgot-password"
+                  onClick={() => switchMode('forgot')}>
+                  Forgot password?
                 </button>
               </div>
-            </div>
-
-            {!isLogin && (
-              <div className="form-group">
-                <label htmlFor="confirmPassword">
-                  <FiLock />
-                  Confirm Password
-                </label>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="Confirm your password"
-                />
-              </div>
             )}
 
-            {isLogin && (
-              <div className="form-options">
-                <label className="remember-me">
-                  <input type="checkbox" />
-                  <span>Remember me</span>
-                </label>
-                <a href="#" className="forgot-password">Forgot password?</a>
-              </div>
-            )}
-
-            <button 
-              type="submit" 
-              className="btn btn-primary auth-submit"
-              disabled={loading}
-            >
-              {loading ? (
-                <span className="spinner-small"></span>
-              ) : (
-                isLogin ? 'Sign In' : 'Create Account'
-              )}
+            <button type="submit" className="btn btn-primary auth-submit" disabled={loading}>
+              {loading
+                ? <span className="spinner-small"></span>
+                : mode === 'login' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send Reset Email'
+              }
             </button>
           </form>
 
-          <div className="auth-divider">
-            <span>or</span>
-          </div>
+          <div className="auth-divider"><span>or</span></div>
 
           <div className="auth-switch">
-            <p>
-              {isLogin ? "Don't have an account?" : 'Already have an account?'}
-              <button
-                type="button"
-                className="switch-btn"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setError('');
-                  setSuccess('');
-                  setFormData({ name: '', email: '', password: '', confirmPassword: '' });
-                }}
-              >
-                {isLogin ? 'Sign Up' : 'Sign In'}
-              </button>
-            </p>
+            {mode === 'login' && (
+              <p>Don&apos;t have an account?{' '}
+                <button type="button" className="switch-btn" onClick={() => switchMode('signup')}>Sign Up</button>
+              </p>
+            )}
+            {mode === 'signup' && (
+              <p>Already have an account?{' '}
+                <button type="button" className="switch-btn" onClick={() => switchMode('login')}>Sign In</button>
+              </p>
+            )}
+            {mode === 'forgot' && (
+              <p>Remembered it?{' '}
+                <button type="button" className="switch-btn" onClick={() => switchMode('login')}>Sign In</button>
+              </p>
+            )}
           </div>
         </div>
 
@@ -229,22 +190,10 @@ const Auth = () => {
           <div className="info-content">
             <h2>Your Health Journey Starts Here</h2>
             <ul className="benefits-list">
-              <li>
-                <FiCheckCircle />
-                <span>Save your symptom predictions</span>
-              </li>
-              <li>
-                <FiCheckCircle />
-                <span>Bookmark favorite doctors</span>
-              </li>
-              <li>
-                <FiCheckCircle />
-                <span>Access your health history</span>
-              </li>
-              <li>
-                <FiCheckCircle />
-                <span>Get personalized recommendations</span>
-              </li>
+              <li><FiCheckCircle /><span>Save your symptom predictions</span></li>
+              <li><FiCheckCircle /><span>Bookmark favorite doctors</span></li>
+              <li><FiCheckCircle /><span>Access your health history</span></li>
+              <li><FiCheckCircle /><span>Get personalized recommendations</span></li>
             </ul>
           </div>
         </div>

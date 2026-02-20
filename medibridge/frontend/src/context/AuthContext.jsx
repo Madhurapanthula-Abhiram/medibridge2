@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { jwtDecode } from 'jwt-decode';
+import { supabase } from '../lib/supabaseClient';
 
 const AuthContext = createContext();
 
@@ -7,112 +7,145 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [session, setSession] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ── Bootstrap: listen to Supabase auth state changes ───────────────────────
   useEffect(() => {
-    const token = localStorage.getItem('medibridge-token');
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        if (decoded.exp * 1000 > Date.now()) {
-          setUser(decoded);
-          fetchUserProfile(token);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) fetchProfile(session.access_token);
+      setLoading(false);
+    });
+
+    // Subscribe to auth events (LOGIN, LOGOUT, TOKEN_REFRESHED, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await fetchProfile(session.access_token);
         } else {
-          localStorage.removeItem('medibridge-token');
+          setProfile(null);
         }
-      } catch (error) {
-        localStorage.removeItem('medibridge-token');
+        setLoading(false);
       }
-    }
-    setLoading(false);
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const fetchUserProfile = async (token) => {
+  // ── Fetch extended profile from backend ─────────────────────────────────────
+  const fetchProfile = async (token) => {
     try {
-      const response = await fetch(`${API_URL}/user/profile`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res = await fetch(`${API_URL}/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      if (response.ok) {
-        const data = await response.json();
-        setUser(prev => ({ ...prev, ...data }));
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data);
       }
-    } catch (error) {
-      console.error('Failed to fetch profile:', error);
+    } catch (err) {
+      console.warn('[AuthContext] Profile fetch failed:', err.message);
     }
   };
 
+  // ── Signup ──────────────────────────────────────────────────────────────────
+  const signup = async ({ name, email, password }) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name } }
+      });
+      if (error) return { success: false, error: error.message };
+      return {
+        success: true,
+        message: 'Account created! Please check your email to confirm your account.'
+      };
+    } catch (err) {
+      return { success: false, error: err.message || 'Network error' };
+    }
+  };
+
+  // ── Login ───────────────────────────────────────────────────────────────────
   const login = async (email, password) => {
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await response.json();
-      if (response.ok) {
-        localStorage.setItem('medibridge-token', data.token);
-        setUser(jwtDecode(data.token));
-        return { success: true };
-      }
-      return { success: false, error: data.message };
-    } catch (error) {
-      return { success: false, error: 'Network error' };
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message || 'Network error' };
     }
   };
 
-  const signup = async (userData) => {
-    try {
-      const response = await fetch(`${API_URL}/auth/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
-      });
-      const data = await response.json();
-      if (response.ok) {
-        return { success: true, message: data.message };
-      }
-      return { success: false, error: data.message };
-    } catch (error) {
-      return { success: false, error: 'Network error' };
-    }
-  };
-
-  const logout = () => {
-    localStorage.removeItem('medibridge-token');
+  // ── Logout ──────────────────────────────────────────────────────────────────
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
+    setSession(null);
+    setProfile(null);
   };
 
-  const updateProfile = async (updates) => {
-    const token = localStorage.getItem('medibridge-token');
+  // ── Forgot Password ─────────────────────────────────────────────────────────
+  const forgotPassword = async (email) => {
     try {
-      const response = await fetch(`${API_URL}/user/profile`, {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+      if (error) return { success: false, error: error.message };
+      return { success: true, message: 'Password reset email sent!' };
+    } catch (err) {
+      return { success: false, error: err.message || 'Network error' };
+    }
+  };
+
+  // ── Update Profile (via backend API) ────────────────────────────────────────
+  const updateProfile = async (updates) => {
+    try {
+      const token = session?.access_token;
+      if (!token) return { success: false, error: 'Not authenticated' };
+
+      const res = await fetch(`${API_URL}/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(updates)
       });
-      if (response.ok) {
-        const data = await response.json();
-        setUser(prev => ({ ...prev, ...data }));
-        return { success: true };
+
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data);
+        return { success: true, data };
       }
-      return { success: false, error: 'Update failed' };
-    } catch (error) {
-      return { success: false, error: 'Network error' };
+      const err = await res.json();
+      return { success: false, error: err.message || 'Update failed' };
+    } catch (err) {
+      return { success: false, error: err.message || 'Network error' };
     }
   };
 
+  // ── Get auth token (for API calls from other components) ────────────────────
+  const getToken = () => session?.access_token || null;
+
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      login, 
-      signup, 
-      logout, 
-      updateProfile, 
+    <AuthContext.Provider value={{
+      user,
+      session,
+      profile,
       loading,
-      isAuthenticated: !!user 
+      isAuthenticated: !!user,
+      login,
+      signup,
+      logout,
+      forgotPassword,
+      updateProfile,
+      getToken
     }}>
       {children}
     </AuthContext.Provider>
@@ -121,8 +154,6 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 };

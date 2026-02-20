@@ -1,0 +1,319 @@
+.doctor-finder .search-header {
+  margin-bottom: 2rem;
+}
+
+.doctor-finder .search-inputs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.doctor-finder .input-with-icon {
+  flex: 1;
+  min-width: 250px;
+  position: relative;
+}
+
+.doctor-finder .filter-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.doctor-finder .filters-panel {
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  animation: slideDown 0.3s ease-out;
+}
+
+.doctor-finder .filter-group {
+  margin-bottom: 1rem;
+}
+
+.doctor-finder .filter-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.doctor-finder .filter-group select,
+.doctor-finder .filter-group input[type="range"] {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.doctor-finder .filter-group input[type="checkbox"] {
+  margin-right: 0.5rem;
+}
+
+.doctor-finder .search-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.doctor-finder .results-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 2rem;
+  min-height: 600px;
+}
+
+.doctor-finder .list-side {
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.doctor-finder .map-side {
+  height: 600px;
+  position: sticky;
+  top: 2rem;
+}
+
+.doctor-finder .place-card {
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.doctor-finder .place-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: 0 8px 25px rgba(0, 255, 136, 0.15);
+}
+
+.doctor-finder .place-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.doctor-finder .place-header h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  flex: 1;
+}
+
+.doctor-finder .rating {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.doctor-finder .rating span {
+  font-size: 0.8rem;
+}
+
+.doctor-finder .address,
+.doctor-finder .distance,
+.doctor-finder .phone {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.doctor-finder .place-info-tags {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  flex-wrap: wrap;
+}
+
+.doctor-finder .status-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.doctor-finder .status-tag.open {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.doctor-finder .status-tag.closed {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.doctor-finder .type-tag {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.doctor-finder .place-footer {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.doctor-finder .contact-btn,
+.doctor-finder .directions-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.doctor-finder .contact-btn {
+  background: var(--primary);
+  color: var(--background);
+  border: none;
+  cursor: pointer;
+}
+
+.doctor-finder .contact-btn:hover:not(:disabled) {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.doctor-finder .contact-btn:disabled {
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.doctor-finder .directions-link {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.doctor-finder .directions-link:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.doctor-finder .place-no-results {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-secondary);
+}
+
+.doctor-finder .no-res-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.doctor-finder .info-window-content {
+  padding: 0.5rem;
+  max-width: 250px;
+}
+
+.doctor-finder .info-window-content h5 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.doctor-finder .info-window-content p {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.doctor-finder .info-window-footer {
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.doctor-finder .info-window-footer a {
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.doctor-finder .info-window-footer a:hover {
+  text-decoration: underline;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1024px) {
+  .doctor-finder .results-layout {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .doctor-finder .map-side {
+    height: 400px;
+    position: relative;
+    top: 0;
+  }
+  
+  .doctor-finder .list-side {
+    max-height: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .doctor-finder .search-inputs {
+    flex-direction: column;
+  }
+  
+  .doctor-finder .search-buttons {
+    flex-direction: column;
+  }
+  
+  .doctor-finder .place-footer {
+    flex-direction: column;
+  }
+  
+  .doctor-finder .map-side {
+    height: 300px;
+  }
+}

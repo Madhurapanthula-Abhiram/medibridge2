@@ -1,11 +1,10 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const crypto = require('crypto');
-const User = require('../models/User');
-const { auth, generateToken } = require('../middleware/auth');
+const { supabase } = require('../supabaseClient');
+const { auth } = require('../middleware/auth');
 const router = express.Router();
 
-// Validation middleware
+// ── Validation helper ─────────────────────────────────────────────────────────
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -14,9 +13,9 @@ const validate = (req, res, next) => {
   next();
 };
 
-// @route   POST /api/auth/signup
-// @desc    Register a new user
-// @access  Public
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/auth/signup
+// ─────────────────────────────────────────────────────────────────────────────
 router.post('/signup', [
   body('name').trim().notEmpty().withMessage('Name is required'),
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
@@ -26,48 +25,36 @@ router.post('/signup', [
   try {
     const { name, email, password } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists with this email' });
-    }
-
-    // Create verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-
-    // Create new user
-    const user = new User({
-      name,
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      verificationToken,
-      verificationTokenExpire: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
-    });
-
-    await user.save();
-
-    // Generate token
-    const token = generateToken(user._id);
-
-    res.status(201).json({
-      message: 'Account created successfully! Please check your email to verify your account.',
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        isVerified: user.isVerified
+      options: {
+        data: { name }          // stored in auth.users raw_user_meta_data → triggers profile creation
       }
     });
-  } catch (error) {
-    console.error('Signup error:', error);
+
+    if (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    return res.status(201).json({
+      message: 'Account created successfully! Please check your email to confirm your account.',
+      user: {
+        id: data.user?.id,
+        email: data.user?.email,
+        name
+      },
+      session: data.session   // null until email confirmed (depends on Supabase project settings)
+    });
+  } catch (err) {
+    console.error('[Auth] Signup error:', err.message);
     res.status(500).json({ message: 'Server error during signup' });
   }
 });
 
-// @route   POST /api/auth/login
-// @desc    Login user
-// @access  Public
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/auth/login
+// ─────────────────────────────────────────────────────────────────────────────
 router.post('/login', [
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
   body('password').notEmpty().withMessage('Password is required'),
@@ -76,137 +63,136 @@ router.post('/login', [
   try {
     const { email, password } = req.body;
 
-    // Find user
-    const user = await User.findOne({ email }).select('+password');
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      return res.status(401).json({ message: error.message });
     }
 
-    // Check password
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    // Generate token
-    const token = generateToken(user._id);
-
-    res.json({
-      token,
+    return res.json({
+      token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+      expires_at: data.session.expires_at,
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        isVerified: user.isVerified
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.user_metadata?.name
       }
     });
-  } catch (error) {
-    console.error('Login error:', error);
+  } catch (err) {
+    console.error('[Auth] Login error:', err.message);
     res.status(500).json({ message: 'Server error during login' });
   }
 });
 
-// @route   GET /api/auth/verify/:token
-// @desc    Verify email
-// @access  Public
-router.get('/verify/:token', async (req, res) => {
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/auth/logout
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/logout', auth, async (req, res) => {
   try {
-    const user = await User.findOne({
-      verificationToken: req.params.token,
-      verificationTokenExpire: { $gt: Date.now() }
-    });
+    // Sign out the user's current session on Supabase
+    const { error } = await supabase.auth.admin?.signOut
+      ? { error: null }   // server-side sign-out not needed; just inform client
+      : await supabase.auth.signOut();
 
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired verification token' });
-    }
-
-    user.isVerified = true;
-    user.verificationToken = undefined;
-    user.verificationTokenExpire = undefined;
-    await user.save();
-
-    res.json({ message: 'Email verified successfully!' });
-  } catch (error) {
-    console.error('Verification error:', error);
-    res.status(500).json({ message: 'Server error during verification' });
+    // Supabase stateless JWTs expire naturally; just tell client to drop token
+    return res.json({ message: 'Logged out successfully' });
+  } catch (err) {
+    console.error('[Auth] Logout error:', err.message);
+    res.status(500).json({ message: 'Server error during logout' });
   }
 });
 
-// @route   POST /api/auth/forgot-password
-// @desc    Send password reset email
-// @access  Public
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/auth/forgot-password
+// ─────────────────────────────────────────────────────────────────────────────
 router.post('/forgot-password', [
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
   validate
 ], async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.body.email });
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    const { email } = req.body;
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.FRONTEND_URL}/reset-password`
+    });
+
+    if (error) {
+      return res.status(400).json({ message: error.message });
     }
 
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordExpire = Date.now() + 60 * 60 * 1000; // 1 hour
-    await user.save();
-
-    // TODO: Send email with reset link
-    // For now, just return success
-    res.json({ message: 'Password reset instructions sent to your email' });
-  } catch (error) {
-    console.error('Forgot password error:', error);
+    return res.json({ message: 'Password reset instructions sent to your email' });
+  } catch (err) {
+    console.error('[Auth] Forgot password error:', err.message);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// @route   POST /api/auth/reset-password/:token
-// @desc    Reset password
-// @access  Public
-router.post('/reset-password/:token', [
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/auth/reset-password
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/reset-password', [
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   validate
-], async (req, res) => {
+], auth, async (req, res) => {
   try {
-    const user = await User.findOne({
-      resetPasswordToken: req.params.token,
-      resetPasswordExpire: { $gt: Date.now() }
-    });
+    const { password } = req.body;
 
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    const { error } = await supabase.auth.updateUser({ password });
+
+    if (error) {
+      return res.status(400).json({ message: error.message });
     }
 
-    user.password = req.body.password;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
-    await user.save();
-
-    res.json({ message: 'Password reset successfully' });
-  } catch (error) {
-    console.error('Reset password error:', error);
+    return res.json({ message: 'Password reset successfully' });
+  } catch (err) {
+    console.error('[Auth] Reset password error:', err.message);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// @route   GET /api/auth/me
-// @desc    Get current user
-// @access  Private
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/auth/refresh
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/refresh', async (req, res) => {
+  try {
+    const { refresh_token } = req.body;
+    if (!refresh_token) {
+      return res.status(400).json({ message: 'refresh_token is required' });
+    }
+
+    const { data, error } = await supabase.auth.refreshSession({ refresh_token });
+
+    if (error) {
+      return res.status(401).json({ message: error.message });
+    }
+
+    return res.json({
+      token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+      expires_at: data.session.expires_at
+    });
+  } catch (err) {
+    console.error('[Auth] Refresh error:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/auth/me    (protected)
+// ─────────────────────────────────────────────────────────────────────────────
 router.get('/me', auth, async (req, res) => {
   try {
-    res.json({
+    return res.json({
       user: {
-        id: req.user._id,
-        name: req.user.name,
+        id: req.user.id,
         email: req.user.email,
-        phone: req.user.phone,
-        location: req.user.location,
-        isVerified: req.user.isVerified,
-        preferences: req.user.preferences
+        name: req.user.user_metadata?.name,
+        role: req.user.role
       }
     });
-  } catch (error) {
-    console.error('Get me error:', error);
+  } catch (err) {
+    console.error('[Auth] Me error:', err.message);
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -1,0 +1,280 @@
+You are a senior full-stack engineer and Google Maps API expert working on my MediBridge project.
+
+IMPORTANT RULE:
+
+Do NOT break existing working pages.
+Do NOT modify global CSS unexpectedly.
+All new features must be modular and production safe.
+
+-----------------------------------------------------
+
+PART 1 — SYMPTOM PREDICTION RESULT REDESIGN
+
+My prediction logic already works.
+
+I need to redesign how results are displayed.
+
+-----------------------------------------------------
+
+RESULT CARDS
+
+After prediction:
+
+Show multiple illness cards.
+
+Each card contains:
+
+- Illness emoji/icon
+- Illness name
+- Short description
+- Specialty type
+- Severity badge (Low / Moderate / High / Emergency)
+- Match percentage
+
+Cards must match modern healthcare glass UI.
+
+-----------------------------------------------------
+
+CLICK BEHAVIOR
+
+When user clicks a card:
+
+Open a modal box (NOT new page).
+
+Modal design must match provided reference style.
+
+-----------------------------------------------------
+
+MODAL CONTENT
+
+Header:
+
+- Illness icon
+- Illness name
+- Specialty
+- Severity badge
+- Description
+
+Sections:
+
+1. Common Symptoms
+2. First Aid / Home Remedies
+3. Care Plan
+
+Subsection inside Care Plan:
+
+OTC / Medications
+
+Each medication displayed as clickable pill button.
+
+-----------------------------------------------------
+
+MEDICATION INTERACTION
+
+When user clicks medication:
+
+Expand to show:
+
+- Usage
+- Purpose
+- Basic guidance
+
+-----------------------------------------------------
+
+WHEN TO SEEK MEDICAL HELP
+
+Red warning section with emergency signs.
+
+-----------------------------------------------------
+
+EMERGENCY DETECTION (CRITICAL)
+
+If symptoms contain:
+
+- chest pain
+- difficulty breathing
+- severe bleeding
+- unconsciousness
+- bluish lips
+- confusion
+- stroke symptoms
+
+System must:
+
+1. Override severity → EMERGENCY
+2. Show emergency banner
+3. Show urgent warning
+
+Emergency detection has higher priority than model prediction.
+
+-----------------------------------------------------
+
+SEVERITY COLORS
+
+Low → green
+Moderate → yellow
+High → red
+Emergency → strong red alert
+
+-----------------------------------------------------
+
+PART 2 — FIND DOCTORS PAGE FIX (MINI GOOGLE MAPS)
+
+Current page is incorrect.
+
+I want it to behave like Google Maps search.
+
+-----------------------------------------------------
+
+SEARCH INPUT
+
+Replace multiple inputs with ONE search box.
+
+Behavior same as symptom input:
+
+User types → press Enter → search executes.
+
+Examples:
+
+dentist
+hospital near me
+best hospitals in vizag
+cardiologist in delhi
+clinic in bangalore
+pharmacy near me
+
+Search must work for ANY location or medical query.
+
+-----------------------------------------------------
+
+BACKEND REQUIREMENT
+
+Search must go to backend server.
+
+Backend calls Google Places APIs:
+
+1. Places Text Search API
+2. Place Details API
+3. Place Photos API
+
+Frontend must NOT directly expose API key.
+
+-----------------------------------------------------
+
+RESULT ACCURACY
+
+Results must match Google Maps exactly.
+
+Same order
+Same names
+Same ratings
+Same places
+
+No random or dummy data allowed.
+
+-----------------------------------------------------
+
+DATA TO DISPLAY
+
+Each result card must include:
+
+Doctor emoji 👨‍⚕️
+
+Then:
+
+- Place name
+- Category
+- Rating ⭐
+- Review count
+- Distance
+- Address
+- Phone number
+- Opening hours
+- Open / Closed status
+- Services / types
+- Google images
+- Directions button
+- Call button
+- View on Maps link
+
+If no image → show placeholder.
+
+-----------------------------------------------------
+
+LOCATION HANDLING
+
+If query contains city/state:
+
+Use it directly.
+
+If query is “near me”:
+
+Use user geolocation.
+
+Must support searches across states.
+
+-----------------------------------------------------
+
+NO MAP DISPLAY
+
+Do NOT show map container.
+
+Only show results cards list with beautiful UI.
+
+-----------------------------------------------------
+
+UI DESIGN
+
+Match MediBridge theme:
+
+- Dark background
+- Glass cards
+- Gradient borders
+- Rounded corners
+- Hover animations
+- Image zoom
+
+-----------------------------------------------------
+
+RESULT STATES
+
+Loading → skeleton cards
+No results → message
+Error → error message
+
+-----------------------------------------------------
+
+PERFORMANCE
+
+Debounce search
+Cache results
+Lazy load images
+
+-----------------------------------------------------
+
+COMPONENTS TO CREATE
+
+Prediction:
+
+- IllnessCard
+- PredictionModal
+- MedicationItem
+
+Doctors:
+
+- DoctorCard
+- SearchBar
+- ResultsList
+
+Shared:
+
+- SkeletonLoader
+- EmergencyAlert
+
+-----------------------------------------------------
+
+FINAL GOAL
+
+1. Prediction page behaves like modern healthcare AI app.
+2. Find Doctors page behaves like mini Google Maps medical search.
+3. Everything works correctly after deployment.

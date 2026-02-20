@@ -1,99 +1,49 @@
+/**
+ * /api/illnesses — Static illness data (no database required)
+ * The frontend uses local data/illnesses.js; this route exists for external API consumers.
+ */
 const express = require('express');
-const Illness = require('../models/Illness');
 const router = express.Router();
 
-// @route   GET /api/illnesses
-// @desc    Get all illnesses with pagination
-// @access  Public
-router.get('/', async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const category = req.query.category;
-    const search = req.query.search;
+// Static illness categories (extend as needed)
+const illnessData = [
+  { id: '1', name: 'Common Cold', category: 'Respiratory', severity: 'mild', specialty: 'General Physician' },
+  { id: '2', name: 'Flu', category: 'Respiratory', severity: 'moderate', specialty: 'General Physician' },
+  { id: '3', name: 'Diabetes', category: 'Metabolic', severity: 'chronic', specialty: 'Endocrinologist' },
+  { id: '4', name: 'Hypertension', category: 'Cardiac', severity: 'chronic', specialty: 'Cardiologist' },
+  { id: '5', name: 'Migraine', category: 'Neurological', severity: 'moderate', specialty: 'Neurologist' },
+  { id: '6', name: 'Asthma', category: 'Respiratory', severity: 'chronic', specialty: 'Pulmonologist' },
+  { id: '7', name: 'Dengue Fever', category: 'Infectious', severity: 'severe', specialty: 'Infectious Disease' },
+  { id: '8', name: 'Typhoid', category: 'Infectious', severity: 'severe', specialty: 'General Physician' },
+  { id: '9', name: 'Malaria', category: 'Infectious', severity: 'severe', specialty: 'Infectious Disease' },
+  { id: '10', name: 'Arthritis', category: 'Musculoskeletal', severity: 'chronic', specialty: 'Rheumatologist' },
+];
 
-    const query = { isActive: true };
-    
-    if (category) {
-      query.category = category;
-    }
-    
-    if (search) {
-      query.$text = { $search: search };
-    }
+router.get('/', (req, res) => {
+  const { category, search, page = 1, limit = 20 } = req.query;
+  let data = [...illnessData];
 
-    const illnesses = await Illness.find(query)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .sort({ name: 1 });
+  if (category) data = data.filter(i => i.category.toLowerCase() === category.toLowerCase());
+  if (search) data = data.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
 
-    const total = await Illness.countDocuments(query);
+  const start = (parseInt(page) - 1) * parseInt(limit);
+  const paginated = data.slice(start, start + parseInt(limit));
 
-    res.json({
-      illnesses,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
-  } catch (error) {
-    console.error('Get illnesses error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+  res.json({
+    illnesses: paginated,
+    pagination: { page: parseInt(page), limit: parseInt(limit), total: data.length, pages: Math.ceil(data.length / parseInt(limit)) }
+  });
 });
 
-// @route   GET /api/illnesses/categories
-// @desc    Get all illness categories
-// @access  Public
-router.get('/categories', async (req, res) => {
-  try {
-    const categories = await Illness.distinct('category');
-    res.json(categories);
-  } catch (error) {
-    console.error('Get categories error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+router.get('/categories', (req, res) => {
+  const categories = [...new Set(illnessData.map(i => i.category))];
+  res.json(categories);
 });
 
-// @route   GET /api/illnesses/:id
-// @desc    Get illness by ID
-// @access  Public
-router.get('/:id', async (req, res) => {
-  try {
-    const illness = await Illness.findById(req.params.id);
-    
-    if (!illness) {
-      return res.status(404).json({ message: 'Illness not found' });
-    }
-
-    res.json(illness);
-  } catch (error) {
-    console.error('Get illness error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   GET /api/illnesses/slug/:slug
-// @desc    Get illness by name (case insensitive)
-// @access  Public
-router.get('/name/:name', async (req, res) => {
-  try {
-    const illness = await Illness.findOne({
-      name: { $regex: new RegExp(req.params.name, 'i') },
-      isActive: true
-    });
-    
-    if (!illness) {
-      return res.status(404).json({ message: 'Illness not found' });
-    }
-
-    res.json(illness);
-  } catch (error) {
-    console.error('Get illness by name error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+router.get('/:id', (req, res) => {
+  const illness = illnessData.find(i => i.id === req.params.id);
+  if (!illness) return res.status(404).json({ message: 'Illness not found' });
+  res.json(illness);
 });
 
 module.exports = router;

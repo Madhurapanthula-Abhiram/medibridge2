@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { FiSend, FiAlertTriangle, FiTrash2, FiX } from 'react-icons/fi';
 import './Chatbot.css';
 
@@ -217,6 +218,29 @@ const Chatbot = () => {
   });
   const [showGreeting, setShowGreeting] = useState(false);
   const [headerHover, setHeaderHover] = useState(false);
+  const { getToken, isAuthenticated } = useAuth();
+  const [conversationId] = useState(() => `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+
+  const saveChatToSupabase = async (userMsg, aiMsg) => {
+    if (!isAuthenticated) return;
+    try {
+      const token = getToken();
+      await fetch(import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/chat` : '/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          user_message: userMsg,
+          ai_response: aiMsg,
+          conversation_id: conversationId
+        })
+      });
+    } catch (err) {
+      console.error('Failed to save chat to history:', err);
+    }
+  };
 
   const [messages, setMessages] = useState([
     { type: 'bot', text: '', isTyping: true, fullText: "👋 Hello! I'm Medron, your AI Medical Assistant.\n\nI can help you with:\n• Symptom analysis 🤒\n• Medication info 💊\n• General health advice 🧘‍♀️" }
@@ -381,6 +405,8 @@ const Chatbot = () => {
       text: responseData.text,
       reasoning_details: responseData.reasoning_details
     }]);
+
+    saveChatToSupabase(userMessage, responseData.text);
 
     setIsLoading(false);
   };

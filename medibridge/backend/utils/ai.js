@@ -1,10 +1,10 @@
 const axios = require('axios');
 
-async function callOpenRouter(messages, systemPrompt = null) {
+async function callOpenRouter(messages, systemPrompt = null, model = 'openai/gpt-oss-20b:free', apiKey = null) {
     const models = [
-        'nvidia/nemotron-3-nano-30b-a3b:free',
         'openai/gpt-oss-20b:free',
-        'arcee-ai/trinity-mini:free'
+        'arcee-ai/trinity-mini:free',
+        'nvidia/nemotron-3-nano-30b-a3b:free'
     ];
 
     let lastError = null;
@@ -18,42 +18,44 @@ async function callOpenRouter(messages, systemPrompt = null) {
         currentMessages = [{ role: 'system', content: systemPrompt }, ...currentMessages];
     }
 
-    for (const model of models) {
-        try {
-            console.log(`Attempting with model: ${model}`);
-            const response = await axios.post(
-                'https://openrouter.ai/api/v1/chat/completions',
-                {
-                    model: model,
-                    messages: currentMessages,
-                    temperature: 0.3,
-                    max_tokens: 500,
-                    top_p: 0.9,
-                    reasoning: { enabled: true }
-                },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-                        'Content-Type': 'application/json',
-                        'HTTP-Referer': 'https://medibridge.com',
-                        'X-Title': 'MediBridge Health'
-                    },
-                    timeout: 15000
-                }
-            );
+    // Use the specified model if provided, otherwise try the default order
+    const modelToTry = model || models[0];
+    const apiKeyToUse = apiKey || process.env.OPENROUTER_API_KEY;
 
-            if (response.data && response.data.choices && response.data.choices[0].message) {
-                const msg = response.data.choices[0].message;
-                return {
-                    content: msg.content,
-                    reasoning_details: msg.reasoning_details || null,
-                    model: model
-                };
+    try {
+        console.log(`Attempting with model: ${modelToTry}`);
+        const response = await axios.post(
+            'https://openrouter.ai/api/v1/chat/completions',
+            {
+                model: modelToTry,
+                messages: currentMessages,
+                temperature: 0.3,
+                max_tokens: 350,
+                top_p: 0.9,
+                reasoning: { enabled: true }
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${apiKeyToUse}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://medibridge.com',
+                    'X-Title': 'MediBridge Health'
+                },
+                timeout: 15000
             }
-        } catch (error) {
-            console.error(`Error with model ${model}:`, error.response?.data || error.message);
-            lastError = error;
+        );
+
+        if (response.data && response.data.choices && response.data.choices[0].message) {
+            const msg = response.data.choices[0].message;
+            return {
+                content: msg.content,
+                reasoning_details: msg.reasoning_details || null,
+                model: modelToTry
+            };
         }
+    } catch (error) {
+        console.error(`Error with model ${modelToTry}:`, error.response?.data || error.message);
+        lastError = error;
     }
 
     throw lastError || new Error('All models failed');

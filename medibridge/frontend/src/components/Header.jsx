@@ -1,24 +1,38 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useTheme } from '../context/ThemeContext';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FiMenu, FiX, FiLogIn, FiUser, FiLogOut, FiClock } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
-import { FiSun, FiMoon, FiMenu, FiX, FiUser, FiLogOut } from 'react-icons/fi';
 import './Header.css';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { theme, toggleTheme } = useTheme();
-  const { user, logout, isAuthenticated } = useAuth();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, user, profile, logout } = useAuth();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setDropdownOpen(false);
+  }, [location.pathname]);
 
   const navLinks = [
     { path: '/', label: 'Home' },
@@ -29,6 +43,16 @@ const Header = () => {
   ];
 
   const isActive = (path) => location.pathname === path;
+
+  const handleLogout = async () => {
+    setDropdownOpen(false);
+    await logout();
+    navigate('/');
+  };
+
+  const displayName = profile?.full_name || profile?.name || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
+  const avatarLetter = displayName.charAt(0).toUpperCase();
+  const avatarSrc = profile?.avatar || profile?.avatar_url || profile?.profile_pic || profile?.picture || profile?.image || user?.user_metadata?.avatar_url || user?.user_metadata?.picture || profile?.image_url;
 
   return (
     <header className={`header ${isScrolled ? 'header-scrolled' : ''}`}>
@@ -58,15 +82,64 @@ const Header = () => {
               className={`nav-link ${isActive(link.path) ? 'active' : ''}`}
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              {link.label}
+              <span className="nav-label">{link.label.toUpperCase()}</span>
             </Link>
           ))}
         </nav>
 
         <div className="header-actions">
-          <Link to="/auth" className="nav-link auth-link">
-            {isAuthenticated ? 'Profile' : 'Login'}
-          </Link>
+          {isAuthenticated ? (
+            <div className="profile-menu" ref={dropdownRef}>
+              <button
+                className="avatar-btn"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                aria-label="User menu"
+              >
+                <div className="avatar-ring">
+                  <div className="avatar-circle">
+                    {avatarSrc ? (
+                      <img src={avatarSrc} alt="Avatar" className="avatar-img-small" />
+                    ) : (
+                      avatarLetter
+                    )}
+                  </div>
+                </div>
+              </button>
+
+              {dropdownOpen && (
+                <div className="profile-dropdown">
+                  <div className="dropdown-header">
+                    <div className="dropdown-avatar">
+                      {avatarSrc ? (
+                        <img src={avatarSrc} alt="Avatar" className="avatar-img-dropdown" />
+                      ) : (
+                        avatarLetter
+                      )}
+                    </div>
+                    <div className="dropdown-user-info">
+                      <span className="dropdown-name">{displayName}</span>
+                      <span className="dropdown-email">{user?.email}</span>
+                    </div>
+                  </div>
+                  <div className="dropdown-divider" />
+                  <Link to="/profile" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+                    <FiUser /> Profile
+                  </Link>
+                  <Link to="/history" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+                    <FiClock /> Prediction History
+                  </Link>
+                  <div className="dropdown-divider" />
+                  <button className="dropdown-item dropdown-logout" onClick={handleLogout}>
+                    <FiLogOut /> Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link to="/login" className="login-btn">
+              <FiLogIn /> Login
+            </Link>
+          )}
 
           <button
             className="mobile-menu-btn"

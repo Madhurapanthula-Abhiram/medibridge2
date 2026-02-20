@@ -1,0 +1,296 @@
+/* ProfilePage.css — isolated, no global overrides */
+
+.profile-page {
+    min-height: calc(100vh - 80px);
+}
+
+.profile-page-header {
+    text-align: center;
+    padding: 3rem 0 2rem;
+}
+
+.profile-page-header h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    margin-bottom: 0.5rem;
+}
+
+.profile-page-header p {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+}
+
+/* ── Toast ─────────────────────────────────────────────────────────────────── */
+.profile-toast {
+    position: fixed;
+    top: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.75rem 1.5rem;
+    border-radius: 2rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    z-index: 999;
+    animation: slideInUp 0.3s ease;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.profile-toast.success {
+    background: linear-gradient(135deg, #059669, #34d399);
+    color: #fff;
+}
+
+.profile-toast.error {
+    background: linear-gradient(135deg, #dc2626, #f87171);
+    color: #fff;
+}
+
+/* ── Card ──────────────────────────────────────────────────────────────────── */
+.profile-card {
+    max-width: 700px;
+    margin: 0 auto 3rem;
+    padding: 2.5rem;
+    background: var(--gradient-card, rgba(255, 255, 255, 0.03));
+    border: 1px solid rgba(192, 38, 211, 0.18);
+    border-radius: 1.5rem;
+    box-shadow: 0 0 60px rgba(192, 38, 211, 0.08), 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Top: avatar + name ─────────────────────────────────────────────────────── */
+.profile-top {
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
+    margin-bottom: 1.75rem;
+}
+
+/* Avatar wrapper — clickable upload area */
+.profile-avatar-wrap {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    cursor: pointer;
+    box-shadow: 0 0 24px rgba(192, 38, 211, 0.45);
+}
+
+.profile-avatar-wrap:hover .avatar-overlay {
+    opacity: 1;
+}
+
+.profile-avatar-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed 0%, #c026d3 100%);
+    color: #fff;
+    font-size: 1.9rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-avatar-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.avatar-overlay svg {
+    font-size: 1.1rem;
+}
+
+.profile-identity h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+}
+
+.profile-role {
+    font-size: 0.85rem;
+    color: #c026d3;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.avatar-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.72rem;
+    color: var(--text-muted, #6b7280);
+}
+
+/* ── Divider ────────────────────────────────────────────────────────────────── */
+.profile-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.07);
+    margin-bottom: 1.75rem;
+}
+
+/* ── Fields grid ─────────────────────────────────────────────────────────────── */
+.profile-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem 2rem;
+    margin-bottom: 2rem;
+}
+
+.profile-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.profile-field label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted, #9ca3af);
+}
+
+.field-value {
+    font-size: 0.975rem;
+    color: var(--text-primary, #f9fafb);
+    padding: 0.7rem 1rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 0.65rem;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+.field-value.locked {
+    color: var(--text-muted, #9ca3af);
+    cursor: not-allowed;
+    font-style: italic;
+}
+
+/* ── Inputs ──────────────────────────────────────────────────────────────────── */
+.profile-input {
+    padding: 0.7rem 1rem;
+    font-size: 0.95rem;
+    background: rgba(15, 15, 25, 0.8);
+    border: 1.5px solid rgba(192, 38, 211, 0.25);
+    border-radius: 0.65rem;
+    color: #f9fafb;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.profile-input:focus {
+    outline: none;
+    border-color: #c026d3;
+    box-shadow: 0 0 0 3px rgba(192, 38, 211, 0.15);
+}
+
+/* Dark date picker — force dark colors including calendar popup */
+.profile-input.dark-date {
+    color-scheme: dark;
+    background: rgba(15, 15, 25, 0.8);
+}
+
+.profile-input.dark-date::-webkit-calendar-picker-indicator {
+    filter: invert(0.8) sepia(1) saturate(3) hue-rotate(250deg);
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.profile-input.dark-date::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* Select dark styling */
+.profile-input option,
+.profile-input optgroup {
+    background: #0f0f19;
+    color: #f9fafb;
+}
+
+.has-error .profile-input {
+    border-color: #ef4444;
+}
+
+.field-error {
+    font-size: 0.75rem;
+    color: #f87171;
+    font-weight: 500;
+}
+
+/* ── Actions ─────────────────────────────────────────────────────────────────── */
+.profile-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+/* ── Spinner inside button ─────────────────────────────────────────────────── */
+.spinner-small {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: pp-spin 0.8s linear infinite;
+    display: inline-block;
+}
+
+@keyframes pp-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+    .profile-card {
+        padding: 1.5rem;
+    }
+
+    .profile-fields {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .profile-actions {
+        flex-direction: column;
+    }
+
+    .profile-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .profile-top {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+}

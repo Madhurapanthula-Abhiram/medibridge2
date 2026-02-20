@@ -1,97 +1,34 @@
-/* Hero 3D Animation Container */
-.hero-3d-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  min-height: 450px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.hero-3d-wrapper {
+    position: relative;
+    width: 100%;
+    height: 650px;
+    background: radial-gradient(circle at center, rgba(16, 10, 40, 0.45) 0%, transparent 75%);
+    border-radius: 32px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
 }
 
-.hero-3d-canvas {
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
+.hero-3d-wrapper:active {
+    cursor: grabbing;
 }
 
-/* Floating Labels */
-.hero-3d-label {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(192, 38, 211, 0.3);
-  border-radius: 20px;
-  font-size: 0.8rem;
-  color: #e2e8f0;
-  animation: labelFloat 3s ease-in-out infinite;
+.canvas-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
 }
 
-.label-dot {
-  width: 8px;
-  height: 8px;
-  background: #c026d3;
-  border-radius: 50%;
-  box-shadow: 0 0 10px #c026d3;
-  animation: dotPulse 2s ease-in-out infinite;
-}
+/* UI Scanners, labels and overlays removed per request */
 
-@keyframes dotPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(0.8); }
-}
-
-@keyframes labelFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
-}
-
-.label-ai {
-  top: 15%;
-  right: 10%;
-  animation-delay: 0s;
-}
-
-.label-network {
-  bottom: 25%;
-  left: 5%;
-  animation-delay: 0.5s;
-}
-
-.label-health {
-  bottom: 15%;
-  right: 15%;
-  animation-delay: 1s;
-}
-
-/* Responsive adjustments */
+/* Ensure the container is tall enough for the diagram to be moved up */
 @media (max-width: 768px) {
-  .hero-3d-container {
-    min-height: 300px;
-  }
-
-  .hero-3d-label {
-    font-size: 0.7rem;
-    padding: 6px 10px;
-  }
-
-  .label-ai {
-    top: 10%;
-    right: 5%;
-  }
-
-  .label-network {
-    bottom: 20%;
-    left: 2%;
-  }
-
-  .label-health {
-    bottom: 10%;
-    right: 5%;
-  }
+    .hero-3d-wrapper {
+        height: 450px;
+    }
 }

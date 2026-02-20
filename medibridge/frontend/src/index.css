@@ -1,5 +1,9 @@
 /* MediBridge Global Styles */
 
+/* ── Google Fonts ──────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+
 /* CSS Variables for Theming */
 :root {
   /* Dark Theme - Medialyze AI Style */
@@ -51,6 +55,7 @@
 
 html {
   scroll-behavior: smooth;
+  height: 100%;
 }
 
 body {
@@ -59,11 +64,19 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   min-height: 100vh;
+  height: 100%;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -75,10 +88,18 @@ body {
 }
 
 /* Typography */
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 700;
-  line-height: 1.2;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  /* Space Grotesk = slim, geometric, high-end tech — matches reference image exactly */
+  font-family: 'Space Grotesk', 'Inter', -apple-system, sans-serif;
+  font-weight: 600;
+  line-height: 1.18;
   color: var(--text-primary);
+  letter-spacing: -0.02em;
 }
 
 h1 {
@@ -173,7 +194,9 @@ a:hover {
 }
 
 /* Form Elements */
-input, textarea, select {
+input,
+textarea,
+select {
   width: 100%;
   padding: 0.875rem 1rem;
   font-size: 1rem;
@@ -184,13 +207,16 @@ input, textarea, select {
   transition: all 0.2s ease;
 }
 
-input:focus, textarea:focus, select:focus {
+input:focus,
+textarea:focus,
+select:focus {
   outline: none;
   border-color: var(--accent-teal);
   box-shadow: 0 0 0 3px var(--glow-color);
 }
 
-input::placeholder, textarea::placeholder {
+input::placeholder,
+textarea::placeholder {
   color: var(--text-muted);
 }
 
@@ -210,16 +236,24 @@ input::placeholder, textarea::placeholder {
 .section-title {
   text-align: center;
   margin-bottom: 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .section-title h2 {
   margin-bottom: 1rem;
+  text-align: center;
+  width: 100%;
 }
 
 .section-title p {
   max-width: 600px;
   margin: 0 auto;
   font-size: 1.125rem;
+  text-align: center;
+  width: 100%;
 }
 
 /* Grid */
@@ -238,10 +272,13 @@ input::placeholder, textarea::placeholder {
 
 /* Animations */
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.8;
     transform: scale(1.05);
@@ -249,18 +286,24 @@ input::placeholder, textarea::placeholder {
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-10px);
   }
 }
 
 @keyframes glow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 20px var(--glow-color);
   }
+
   50% {
     box-shadow: 0 0 40px var(--glow-color), 0 0 60px var(--glow-color);
   }
@@ -271,6 +314,7 @@ input::placeholder, textarea::placeholder {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -281,6 +325,7 @@ input::placeholder, textarea::placeholder {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -308,30 +353,64 @@ input::placeholder, textarea::placeholder {
 
 /* Utility Classes */
 .text-gradient {
-  background: linear-gradient(90deg, var(--accent-purple) 0%, var(--accent-teal) 100%);
+  background: linear-gradient(90deg, #c026d3 0%, #a855f7 40%, #22d3ee 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-weight: 800;
+  /* inherit font-weight from heading — no override needed */
 }
 
 .text-center {
   text-align: center;
 }
 
-.mt-1 { margin-top: 0.25rem; }
-.mt-2 { margin-top: 0.5rem; }
-.mt-3 { margin-top: 0.75rem; }
-.mt-4 { margin-top: 1rem; }
-.mt-5 { margin-top: 1.5rem; }
-.mt-6 { margin-top: 2rem; }
+.mt-1 {
+  margin-top: 0.25rem;
+}
 
-.mb-1 { margin-bottom: 0.25rem; }
-.mb-2 { margin-bottom: 0.5rem; }
-.mb-3 { margin-bottom: 0.75rem; }
-.mb-4 { margin-bottom: 1rem; }
-.mb-5 { margin-bottom: 1.5rem; }
-.mb-6 { margin-bottom: 2rem; }
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
+.mt-3 {
+  margin-top: 0.75rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.mt-5 {
+  margin-top: 1.5rem;
+}
+
+.mt-6 {
+  margin-top: 2rem;
+}
+
+.mb-1 {
+  margin-bottom: 0.25rem;
+}
+
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.mb-3 {
+  margin-bottom: 0.75rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.mb-5 {
+  margin-bottom: 1.5rem;
+}
+
+.mb-6 {
+  margin-bottom: 2rem;
+}
 
 .flex {
   display: flex;
@@ -353,9 +432,17 @@ input::placeholder, textarea::placeholder {
   justify-content: space-between;
 }
 
-.gap-2 { gap: 0.5rem; }
-.gap-4 { gap: 1rem; }
-.gap-6 { gap: 1.5rem; }
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.gap-6 {
+  gap: 1.5rem;
+}
 
 /* Scrollbar */
 ::-webkit-scrollbar {
@@ -429,11 +516,11 @@ input::placeholder, textarea::placeholder {
   .section {
     padding: 3rem 0;
   }
-  
+
   .container {
     padding: 0 1rem;
   }
-  
+
   .grid-3,
   .grid-4 {
     grid-template-columns: 1fr;

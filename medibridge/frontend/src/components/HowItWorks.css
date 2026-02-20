@@ -32,10 +32,12 @@
 
 .step-number {
   font-size: 4rem;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
   margin-bottom: 0.5rem;
-  opacity: 0.3;
+  opacity: 0.22;
+  color: var(--accent-purple);
+  letter-spacing: -0.04em;
 }
 
 .step-content h3 {
@@ -138,6 +140,7 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+
   .step-card,
   .step-card.step-reverse {
     flex-direction: column;

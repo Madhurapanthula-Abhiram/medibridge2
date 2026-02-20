@@ -47,8 +47,8 @@ const Hero = () => {
           </h1>
 
           <p className="hero-description animate-on-scroll">
-            MediBridge connects you with the right doctors and hospitals based on your symptoms. 
-            Quick, accurate, and always nearby. Get personalized health insights and find 
+            MediBridge connects you with the right doctors and hospitals based on your symptoms.
+            Quick, accurate, and always nearby. Get personalized health insights and find
             verified healthcare professionals in your area.
           </p>
 

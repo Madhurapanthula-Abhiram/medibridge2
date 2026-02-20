@@ -1,182 +1,204 @@
-import { useState, useEffect, useRef } from 'react';
-import { FiSearch, FiAlertCircle, FiUser, FiMapPin, FiArrowRight, FiActivity, FiShield, FiPlusCircle, FiCheckCircle } from 'react-icons/fi';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { FiSearch, FiActivity, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import './SymptomPrediction.css';
+
+// Components
+import IllnessCard from './IllnessCard';
+import PredictionModal from './PredictionModal';
+import EmergencyAlert from './EmergencyAlert';
+import SkeletonLoader from './SkeletonLoader';
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 const SymptomPrediction = () => {
   const [symptoms, setSymptoms] = useState('');
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [userLocation, setUserLocation] = useState({ lat: 17.6868, lng: 83.2185 }); // Default to Vizag seen in map
-  const sectionRef = useRef(null);
+  const [selectedIllness, setSelectedIllness] = useState(null);
+  const [isEmergency, setIsEmergency] = useState(false);
+  const { getToken, isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    // Attempt to get user location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
+  // Local Emergency Detection
+  const detectEmergency = (text) => {
+    const keywords = [
+      'chest pain', 'breathing', 'bleeding', 'unconscious',
+      'bluish', 'confusion', 'stroke', 'seizure', 'passed out'
+    ];
+    const lower = text.toLowerCase();
+    return keywords.some(k => lower.includes(k));
+  };
+
+  const savePredictionToHistory = async (predictionData) => {
+    if (!isAuthenticated) return;
+    try {
+      const token = getToken();
+      const symptomArr = symptoms.split(',').map(s => s.trim()).filter(Boolean);
+      await fetch(`${API_BASE}/history`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-        () => console.log('Location access denied, using default.')
-      );
+        body: JSON.stringify({
+          symptoms_input: symptomArr,
+          predicted_disease: predictionData.predictions?.[0]?.name || '',
+          confidence_score: (predictionData.predictions?.[0]?.confidence || 0) / 100,
+          severity: predictionData.predictions?.[0]?.severity || 'Low',
+          full_response: predictionData,
+        }),
+      });
+    } catch (err) {
+      console.error('[SymptomPrediction] save history failed:', err);
     }
-  }, []);
+  };
 
   const analyzeSymptoms = async () => {
-    if (!symptoms.trim()) {
-      setError('Please describe your symptoms');
-      return;
-    }
+    if (!symptoms.trim()) { setError('Please describe your symptoms'); return; }
 
     setLoading(true);
     setError(null);
     setPrediction(null);
+    setSelectedIllness(null);
+
+    const hasEmergency = detectEmergency(symptoms);
+    setIsEmergency(hasEmergency);
 
     try {
-      // Call our robust backend instead of direct OpenRouter (prevents CORS & allows backend logging)
-      const response = await fetch('/api/predict', {
+      const token = getToken();
+      const response = await fetch(`${API_BASE}/predict-symptoms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(isAuthenticated ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ symptoms }),
       });
 
       if (!response.ok) {
-        throw new Error('Analysis failed. The model might be busy or the request was rejected.');
+        const err = await response.json();
+        throw new Error(err.message || `HTTP ${response.status}`);
       }
 
       const data = await response.json();
+
+      // Handle Emergency Override (if backend didn't catch it or for consistency)
+      if (hasEmergency || data.isEmergency) {
+        setIsEmergency(true);
+        if (data.predictions?.length > 0) {
+          data.predictions[0].severity = 'Emergency';
+        }
+      }
+
       setPrediction(data);
+      savePredictionToHistory(data);
     } catch (err) {
-      console.error('Diagnostic error:', err);
-      setError('Health AI is temporarily unavailable. This usually happens when the free models are at capacity. Please try again in 30 seconds.');
+      console.error('[SymptomPrediction] error:', err);
+      setError(err.message || 'Unable to connect to service. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <section className="symptom-prediction section" ref={sectionRef}>
+    <section className="symptom-prediction section">
       <div className="container">
         <div className="section-title animate-on-scroll">
           <h2>Health <span className="text-gradient">Analyzer</span></h2>
-          <p>
-            Powered by advanced medical AI. Describe your symptoms naturally for a professional diagnostic assessment.
-          </p>
+          <p>Describe your symptoms for an AI-powered medical analysis and care plan guidance.</p>
         </div>
 
-        <div className="symptom-input-wrapper glass-card animate-on-scroll">
-          <div className="input-header">
-            <FiActivity className="icon" />
-            <span>Diagnostic Input Panel</span>
-          </div>
-          <div className="input-group">
+        <div className="prediction-container">
+          {/* 🔍 Input Section */}
+          <div className="symptom-input-wrapper glass-card animate-on-scroll">
+            <div className="input-header">
+              <FiActivity /> Diagnostic Input
+            </div>
             <textarea
-              id="symptom-input-textarea"
-              placeholder="e.g. 'I have a sharp stomach pain that started 2 hours ago, and I feel slightly dizzy...'"
+              placeholder="Describe your symptoms (e.g., 'Sharp pain in lower abdomen and fever for 2 days')"
               value={symptoms}
               onChange={(e) => setSymptoms(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  analyzeSymptoms();
+                }
+              }}
               className="symptom-textarea"
+              rows={4}
             />
             <div className="input-footer">
               <div className="hints">
+                <span><FiCheckCircle /> Be descriptive</span>
                 <span><FiCheckCircle /> Mention duration</span>
-                <span><FiCheckCircle /> Frequency?</span>
               </div>
               <button
-                id="analyze-symptoms-btn"
                 className="btn btn-primary"
                 onClick={analyzeSymptoms}
                 disabled={loading || !symptoms.trim()}
               >
-                {loading ? <span className="spinner-small"></span> : <><FiSearch /> Analyze Symptoms</>}
+                {loading ? <span className="spinner-small" /> : <><FiSearch /> Analyze</>}
               </button>
             </div>
           </div>
+
+          {/* 🚨 Emergency Alert */}
+          {isEmergency && <EmergencyAlert />}
+
+          {/* ⚠️ Error */}
+          {error && (
+            <div className="error-message animate-fadeIn">
+              <FiAlertCircle /> {error}
+            </div>
+          )}
+
+          {/* ⏳ Loading State */}
+          {loading && <SkeletonLoader type="card" count={3} />}
+
+          {/* ✨ Prediction Results Section */}
+          {prediction && !loading && (
+            <div className="results-section animate-fadeIn">
+              <div className="results-header-info">
+                <h3>Predicted Conditions</h3>
+                <span className="results-count">Top {prediction.predictions?.length || 0} Possibilities</span>
+              </div>
+
+              <div className="results-container">
+                {Array.isArray(prediction.predictions) && prediction.predictions.length > 0 ? (
+                  <div className="illness-cards-list">
+                    {[...prediction.predictions]
+                      .sort((a, b) => b.confidence - a.confidence)
+                      .map((ill, i) => (
+                        <IllnessCard
+                          key={i}
+                          illness={ill}
+                          onClick={(item) => setSelectedIllness(item)}
+                        />
+                      ))}
+                  </div>
+                ) : (
+                  <div className="no-results-box">
+                    <FiAlertCircle />
+                    <p>No specific conditions identified. Please refine your symptoms or seek professional advice.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="disclaimer-modern mt-8">
+                <div className="disclaimer-title">Medical Disclaimer</div>
+                <p>{prediction.disclaimer}</p>
+              </div>
+            </div>
+          )}
         </div>
 
-        {error && <div className="error-message animate-fadeIn"><FiAlertCircle /> {error}</div>}
-
-        {prediction && (
-          <div className="results-grid animate-fadeIn">
-            <div className="prediction-results-list">
-              <div className="results-header-info">
-                <h3>Potential Conditions</h3>
-                <span className="ai-model-tag">AI Powered Analysis</span>
-              </div>
-
-              {prediction.illnesses?.map((ill, i) => (
-                <div key={i} className={`prediction-result-card ai-severity-${ill.severity.toLowerCase()}`}>
-                  <div className="result-header">
-                    <h4>{ill.name}</h4>
-                    <span className="conf-badge">{ill.confidence} Match</span>
-                  </div>
-                  <p className="ill-desc">{ill.description}</p>
-                  <div className="result-meta">
-                    <span className="ai-severity-tag">{ill.severity} Severity</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="guidance-container">
-              <div className="guidance-card glass-card">
-                <div className="card-header"><FiPlusCircle /> <h4>Care Plan</h4></div>
-                <div className="care-section">
-                  <h5>OTC Support:</h5>
-                  <div className="pill-list">
-                    {prediction.medications?.map((m, i) => <span key={i} className="pill-tag">{m}</span>)}
-                  </div>
-                </div>
-                <div className="care-section mt-4">
-                  <h5>Precautions:</h5>
-                  <ul className="remedy-list">
-                    {prediction.precautions?.map((p, i) => <li key={i}>{p}</li>)}
-                  </ul>
-                </div>
-                <div className="care-section mt-4">
-                  <h5>Safe Home Care:</h5>
-                  <ul className="remedy-list">
-                    {prediction.home_remedies?.map((r, i) => <li key={i}>{r}</li>)}
-                  </ul>
-                </div>
-              </div>
-
-              <div className="guidance-card glass-card warning">
-                <div className="card-header"><FiAlertCircle /> <h4>Emergency Warning Signs</h4></div>
-                <ul className="emergency-list">
-                  {prediction.emergency_signs?.map((s, i) => <li key={i}>{s}</li>)}
-                </ul>
-              </div>
-
-              <div className="doctor-cta-modern glass-card highlight">
-                <div className="cta-main">
-                  <div className="cta-icon-bg"><FiUser /></div>
-                  <div className="cta-text">
-                    <h4>Check for Doctors</h4>
-                    <p>Consult a {prediction.doctor_specialist} for professional advice on {prediction.illnesses?.[0]?.name}</p>
-                  </div>
-                </div>
-                <button
-                  id="view-specialist-btn"
-                  onClick={() => window.location.href = `/find-doctor?query=${encodeURIComponent(prediction.illnesses?.[0]?.name || '')}&specialty=${encodeURIComponent(prediction.doctor_specialist)}`}
-                  className="btn btn-primary full-width cta-btn"
-                >
-                  <FiMapPin /> Locate Specialist Nearby
-                </button>
-              </div>
-            </div>
-
-            <div className="full-width disclaimer-modern">
-              <div className="disclaimer-title"><FiShield /> Medical Disclaimer</div>
-              <p>{prediction.disclaimer}</p>
-            </div>
-          </div>
+        {/* 📦 Details Modal */}
+        {selectedIllness && (
+          <PredictionModal
+            illness={selectedIllness}
+            onClose={() => setSelectedIllness(null)}
+          />
         )}
       </div>
     </section>

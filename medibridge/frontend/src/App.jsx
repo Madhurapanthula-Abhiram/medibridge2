@@ -3,15 +3,19 @@ import Header from './components/Header';
 import Hero from './components/Hero';
 import Features from './components/Features';
 import CommonIllnesses from './components/CommonIllnesses';
-import SymptomPrediction from './pages/SymptomPrediction';
-import FindDoctor from './components/FindDoctor';
+import Chatbot from './components/Chatbot';
 import HowItWorks from './components/HowItWorks';
 import AboutUs from './components/AboutUs';
 import Auth from './components/Auth';
-import Chatbot from './components/Chatbot';
+import ResetPassword from './components/ResetPassword';
+import SymptomPrediction from './pages/SymptomPrediction';
+import DoctorFinder from './pages/DoctorFinder';
+import ProfilePage from './components/ProfilePage';
+import HistoryPage from './components/HistoryPage';
+import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
-// Home Page Component
+// Home with all components
 const Home = () => (
   <>
     <Hero />
@@ -31,60 +35,25 @@ const IllnessesPage = () => (
   </div>
 );
 
-// Prediction Page
-const PredictionPage = () => (
-  <SymptomPrediction />
+// Symptom Checker Page — protected
+const SymptomCheckerPage = () => (
+  <ProtectedRoute>
+    <SymptomPrediction />
+  </ProtectedRoute>
 );
 
-// Find Doctor Page Wrapper
-const FindDoctorPage = () => (
-  <div className="page-container">
-    <FindDoctor />
-  </div>
+// Doctor Finder Page — protected
+const DoctorFinderPage = () => (
+  <ProtectedRoute>
+    <DoctorFinder />
+  </ProtectedRoute>
 );
 
-// How It Works Page Wrapper
-const HowItWorksPage = () => (
-  <div className="page-container">
-    <HowItWorks />
-  </div>
-);
+// How It Works Page
+const HowItWorksPage = () => <HowItWorks />;
 
-// About Page Wrapper
-const AboutPage = () => (
-  <div className="page-container">
-    <AboutUs />
-  </div>
-);
-
-// Auth Page Wrapper
-const AuthPage = () => (
-  <div className="auth-page-wrapper">
-    <Auth />
-  </div>
-);
-
-function App() {
-  return (
-    <div className="app">
-      <Header />
-      <main className="main-content">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/illnesses" element={<IllnessesPage />} />
-          <Route path="/symptom-prediction" element={<PredictionPage />} />
-          <Route path="/symptom-checker" element={<PredictionPage />} />
-          <Route path="/find-doctor" element={<FindDoctorPage />} />
-          <Route path="/how-it-works" element={<HowItWorksPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/auth" element={<AuthPage />} />
-        </Routes>
-      </main>
-      <Chatbot />
-      <Footer />
-    </div>
-  );
-}
+// About Page
+const AboutPage = () => <AboutUs />;
 
 // Footer Component
 const Footer = () => (
@@ -133,12 +102,56 @@ const Footer = () => (
       <div className="footer-bottom">
         <p>&copy; {new Date().getFullYear()} MediBridge. All rights reserved.</p>
         <p className="disclaimer">
-          MediBridge is an informational platform and does not provide medical advice. 
+          MediBridge is an informational platform and does not provide medical advice.
           Always consult a qualified healthcare provider for medical concerns.
         </p>
       </div>
     </div>
   </footer>
 );
+
+function App() {
+  return (
+    <div className="app">
+      <Header />
+      <main className="main-content">
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/illnesses" element={<IllnessesPage />} />
+          <Route path="/how-it-works" element={<HowItWorksPage />} />
+          <Route path="/about" element={<AboutPage />} />
+
+          {/* Protected routes */}
+          <Route path="/symptom-prediction" element={<SymptomCheckerPage />} />
+          <Route path="/symptom-checker" element={<SymptomCheckerPage />} />
+          <Route path="/doctor-finder" element={<DoctorFinderPage />} />
+          <Route path="/find-doctor" element={<DoctorFinderPage />} />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <HistoryPage />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </main>
+      <Chatbot />
+      <Footer />
+    </div>
+  );
+}
 
 export default App;

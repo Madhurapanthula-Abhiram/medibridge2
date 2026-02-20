@@ -1,32 +1,31 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const { supabase } = require('../supabaseClient');
 
+/**
+ * Middleware: verify Supabase JWT and attach user to req.user
+ */
 const auth = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    
+    const authHeader = req.header('Authorization') || '';
+    const token = authHeader.replace('Bearer ', '').trim();
+
     if (!token) {
       return res.status(401).json({ message: 'No authentication token, access denied' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
-    
-    if (!user) {
-      return res.status(401).json({ message: 'Token is valid but user not found' });
+    // Validate the JWT with Supabase
+    const { data, error } = await supabase.auth.getUser(token);
+
+    if (error || !data?.user) {
+      return res.status(401).json({ message: 'Invalid or expired token', error: error?.message });
     }
 
-    req.user = user;
+    req.user = data.user;   // Supabase User object { id, email, ... }
+    req.token = token;
     next();
-  } catch (error) {
-    res.status(401).json({ message: 'Token is invalid', error: error.message });
+  } catch (err) {
+    console.error('[Auth Middleware] Error:', err.message);
+    res.status(401).json({ message: 'Token verification failed', error: err.message });
   }
 };
 
-const generateToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '7d'
-  });
-};
-
-module.exports = { auth, generateToken };
+module.exports = { auth };

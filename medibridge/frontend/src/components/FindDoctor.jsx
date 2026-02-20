@@ -1,238 +1,136 @@
-import { useState, useEffect, useRef } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
-import { FiSearch, FiMapPin, FiPhone, FiStar, FiNavigation, FiActivity, FiX, FiExternalLink, FiClock } from 'react-icons/fi';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { FiActivity, FiMapPin, FiSearch } from 'react-icons/fi';
 import './FindDoctor.css';
 
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+// Components
+import DoctorCard from './DoctorCard';
+import SearchBar from './SearchBar';
+import SkeletonLoader from './SkeletonLoader';
 
-const mapContainerStyle = {
-  width: '100%',
-  height: '100%',
-  borderRadius: '1.25rem',
-};
-
-const defaultCenter = {
-  lat: 40.7128,
-  lng: -74.0060,
-};
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 const FindDoctor = () => {
   const [searchParams] = useSearchParams();
-  const [specialty, setSpecialty] = useState(searchParams.get('specialty') || '');
+  const [query, setQuery] = useState(searchParams.get('query') || '');
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedPlace, setSelectedPlace] = useState(null);
+  const [error, setError] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
-  const [mapCenter, setMapCenter] = useState(defaultCenter);
-  const [searchType, setSearchType] = useState('doctor');
-  const sectionRef = useRef(null);
+  const [usingMockData, setUsingMockData] = useState(false);
 
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    libraries: ['places'],
-  });
-
+  // Get User Location
   useEffect(() => {
-    const lat = parseFloat(searchParams.get('lat'));
-    const lng = parseFloat(searchParams.get('lng'));
-
-    if (lat && lng) {
-      const pos = { lat, lng };
-      setUserLocation(pos);
-      setMapCenter(pos);
-    } else if (navigator.geolocation) {
+    if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const pos = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-          setUserLocation(pos);
-          setMapCenter(pos);
+        (pos) => {
+          setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         },
-        (error) => {
-          console.error("Geolocation error:", error);
-          // Set to default New York if permission denied
-          setUserLocation(defaultCenter);
-          setMapCenter(defaultCenter);
-        },
-        { timeout: 10000 }
+        async (err) => {
+          console.warn('[FindDoctor] Geolocation failed, attempting IP-based lookup:', err.message);
+          try {
+            const resp = await fetch('https://ipapi.co/json/');
+            const data = await resp.json();
+            if (data.latitude && data.longitude) {
+              setUserLocation({ lat: data.latitude, lng: data.longitude });
+            }
+          } catch (ipErr) {
+            console.error('[FindDoctor] IP lookup failed:', ipErr);
+          }
+        }
       );
-    } else {
-      setUserLocation(defaultCenter);
-      setMapCenter(defaultCenter);
     }
-  }, [searchParams]);
+  }, []);
 
-  useEffect(() => {
-    if (specialty && userLocation && isLoaded) {
-      performSearch('doctor');
-    }
-  }, [specialty, userLocation, isLoaded]);
-
-  const performSearch = async (type) => {
-    if (!userLocation) {
-      console.warn('No user location available for search');
-      return;
-    }
-
+  const fetchDoctors = useCallback(async (searchQuery) => {
     setLoading(true);
-    setSearchType(type);
-
+    setError(null);
     try {
-      const endpoint = type === 'hospital' ? '/hospitals' : '';
-      const response = await fetch(`/api/doctors${endpoint}?lat=${userLocation.lat}&lng=${userLocation.lng}&specialty=${encodeURIComponent(specialty)}`);
+      const params = new URLSearchParams();
+      if (searchQuery) params.append('query', searchQuery);
+      if (userLocation) {
+        params.append('lat', userLocation.lat);
+        params.append('lng', userLocation.lng);
+      }
 
-      if (!response.ok) throw new Error('Search failed');
+      const response = await fetch(`${API_BASE}/doctors?${params.toString()}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch doctors: ${response.statusText}`);
+      }
 
       const data = await response.json();
-      setDoctors(type === 'hospital' ? data.hospitals : data.doctors);
-
-      if (data.doctors?.[0]?.location || data.hospitals?.[0]?.location) {
-        setMapCenter(data.doctors?.[0]?.location || data.hospitals?.[0]?.location);
-      }
-    } catch (error) {
-      console.error('Search error:', error);
+      setDoctors(data.doctors || []);
+      setUsingMockData(data.usingMockData || false);
+    } catch (err) {
+      console.error('[FindDoctor] Fetch error:', err);
+      setError('Unable to reach medical database. Showing fallback data.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [userLocation]);
 
-  if (loadError) return <div className="error-screen">Error loading Google Maps. Please check your API key.</div>;
-  if (!isLoaded) return <div className="loading-screen"><div className="spinner"></div><p>Initialising Maps...</p></div>;
+  // Initial search from URL or default
+  useEffect(() => {
+    if (userLocation || query) {
+      fetchDoctors(query);
+    }
+  }, [userLocation, query, fetchDoctors]);
 
   return (
-    <section className="find-doctor section" ref={sectionRef}>
-      <div className="container">
-        <div className="search-header glass-card animate-on-scroll">
+    <div className="find-doctor">
+      <div className="fd-container">
+        {/* ── Header ── */}
+        <header className="search-header-v2">
           <h2>Find <span className="text-gradient">Medical Care</span></h2>
-          <p className="search-sub">Expert assistance is just a click away. Select a category to begin.</p>
-          <div className="search-controls">
-            <div className="input-with-icon">
-              <FiSearch />
-              <input
-                id="specialty-search-input"
-                type="text"
-                placeholder="Specialty (e.g. Cardiologist, Dentist, General Surgeon)"
-                value={specialty}
-                onChange={(e) => setSpecialty(e.target.value)}
-              />
-            </div>
-            <div className="search-buttons">
-              <button
-                id="find-doctors-btn"
-                className={`btn ${searchType === 'doctor' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => performSearch('doctor')}
-                disabled={loading}
-              >
-                {loading && searchType === 'doctor' ? <span className="spinner-small"></span> : <><FiActivity /> Find Doctors</>}
-              </button>
-              <button
-                id="find-hospitals-btn"
-                className={`btn ${searchType === 'hospital' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => performSearch('hospital')}
-                disabled={loading}
-              >
-                {loading && searchType === 'hospital' ? <span className="spinner-small"></span> : <><FiMapPin /> Nearby Hospitals</>}
-              </button>
-            </div>
+          <p>Locate top-rated doctors, hospitals, and clinics in your area.</p>
+        </header>
+
+        {/* ── Search Bar ── */}
+        <SearchBar
+          onSearch={(val) => {
+            setQuery(val);
+            fetchDoctors(val);
+          }}
+          initialValue={query}
+        />
+
+        {/* ── Mock Data Notice ── */}
+        {usingMockData && (
+          <div className="mock-data-notice animate-fadeIn">
+            📍 Showing sample data (Google Maps API key not configured or unavailable)
           </div>
-        </div>
+        )}
 
-        <div className="results-layout">
-          <div className="list-side">
-            {doctors.length > 0 ? (
-              doctors.map((item, idx) => (
-                <div key={item.id || idx} className="place-card glass-card" onClick={() => {
-                  setSelectedPlace(item);
-                  setMapCenter(item.location);
-                }}>
-                  <div className="place-header">
-                    <h4>{item.name}</h4>
-                    <div className="rating">
-                      <FiStar /> {item.rating || 'N/A'} <span>({item.user_ratings_total || 0})</span>
-                    </div>
-                  </div>
-                  <p className="address"><FiMapPin /> {item.address}</p>
-
-                  <div className="place-info-tags">
-                    <span className={`status-tag ${item.open_now ? 'open' : 'closed'}`}>
-                      <FiClock /> {item.open_now ? 'Open Now' : 'Closed'}
-                    </span>
-                    {item.types?.includes('health') && <span className="type-tag">Verified Health Provider</span>}
-                  </div>
-
-                  <div className="place-footer">
-                    <button className="contact-btn">
-                      <FiPhone /> Contact
-                    </button>
-                    <a href={item.maps_link} target="_blank" rel="noreferrer" className="directions-link">
-                      <FiExternalLink /> Directions
-                    </a>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="place-no-results glass-card">
-                <div className="no-res-icon"><FiActivity /></div>
-                <h3>No Results Found</h3>
-                <p>Try searching for a different specialty or allow location access to see nearby clinics.</p>
+        {/* ── Results Container ── */}
+        <div className="results-container-v2">
+          {loading ? (
+            <SkeletonLoader type="doctor" count={5} />
+          ) : doctors.length > 0 ? (
+            <div className="results-list-v2">
+              <div className="results-meta-v2">
+                <span className="results-count-v2">{doctors.length} Results Found</span>
               </div>
-            )}
-          </div>
-
-          <div className="map-side glass-card">
-            <GoogleMap
-              mapContainerStyle={mapContainerStyle}
-              center={mapCenter}
-              zoom={14}
-              options={{
-                styles: [
-                  { "elementType": "geometry", "stylers": [{ "color": "#121212" }] },
-                  { "elementType": "labels.text.stroke", "stylers": [{ "color": "#121212" }] },
-                  { "elementType": "labels.text.fill", "stylers": [{ "color": "#746855" }] },
-                  { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#2c2c2c" }] }
-                ]
-              }}
-            >
-              {userLocation && (
-                <Marker
-                  position={userLocation}
-                  icon={{
-                    url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
-                  }}
-                  title="Your Location"
-                />
-              )}
-              {doctors.map(item => (
-                <Marker
-                  key={item.id}
-                  position={item.location}
-                  onClick={() => setSelectedPlace(item)}
-                />
+              {doctors.map((doc) => (
+                <DoctorCard key={doc.id} doctor={doc} />
               ))}
-              {selectedPlace && (
-                <InfoWindow
-                  position={selectedPlace.location}
-                  onCloseClick={() => setSelectedPlace(null)}
-                >
-                  <div className="info-window-content">
-                    <h5>{selectedPlace.name}</h5>
-                    <p>{selectedPlace.address}</p>
-                    <div className="info-window-footer">
-                      <a href={selectedPlace.maps_link} target="_blank" rel="noreferrer">
-                        Directions <FiExternalLink />
-                      </a>
-                    </div>
-                  </div>
-                </InfoWindow>
-              )}
-            </GoogleMap>
-          </div>
+            </div>
+          ) : !loading && (
+            <div className="fd-empty-state animate-fadeIn">
+              <div className="empty-icon"><FiSearch /></div>
+              <h3>No Medical Care Found</h3>
+              <p>Try searching for a different specialty or area.</p>
+            </div>
+          )}
+
+          {error && !loading && (
+            <div className="error-message">
+              <FiActivity /> {error}
+            </div>
+          )}
         </div>
       </div>
-    </section>
+    </div>
   );
 };
 
