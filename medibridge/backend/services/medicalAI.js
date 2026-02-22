@@ -21,7 +21,7 @@ Rules:
   - symptoms: List of 4-6 common symptoms
   - firstAid: List of 3-4 home remedies or immediate actions
   - carePlan: {
-      medications: List of OTC objects { name, usage, purpose, guidance }
+      medications: MUST provide exactly 3 common OTC/Safe medications as objects { name, usage, purpose, guidance }. 
     }
   - emergencySigns: List of red flag signs to seek urgent help
 * Never suggest prescription drugs
@@ -42,7 +42,11 @@ Response Format (respond ONLY with this JSON, nothing else):
       "symptoms": ["..."],
       "firstAid": ["..."],
       "carePlan": {
-        "medications": [{ "name": "...", "usage": "...", "purpose": "...", "guidance": "..." }]
+        "medications": [
+          { "name": "Tablet A", "usage": "...", "purpose": "...", "guidance": "..." },
+          { "name": "Tablet B", "usage": "...", "purpose": "...", "guidance": "..." },
+          { "name": "Tablet C", "usage": "...", "purpose": "...", "guidance": "..." }
+        ]
       },
       "emergencySigns": ["..."]
     }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { FiActivity, FiMapPin, FiSearch } from 'react-icons/fi';
+import { FiActivity, FiMapPin, FiSearch, FiMap } from 'react-icons/fi';
 import './FindDoctor.css';
 
 // Components
@@ -9,6 +9,7 @@ import SearchBar from './SearchBar';
 import SkeletonLoader from './SkeletonLoader';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || '';
 
 const FindDoctor = () => {
   const [searchParams] = useSearchParams();
@@ -18,6 +19,7 @@ const FindDoctor = () => {
   const [error, setError] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [usingMockData, setUsingMockData] = useState(false);
+  const [mapQuery, setMapQuery] = useState('');
 
   // Get User Location
   useEffect(() => {
@@ -62,6 +64,15 @@ const FindDoctor = () => {
       const data = await response.json();
       setDoctors(data.doctors || []);
       setUsingMockData(data.usingMockData || false);
+
+      // Build the Google Maps query for the embed
+      const mq = searchQuery
+        ? `${searchQuery} medical`
+        : userLocation
+          ? `doctors near ${userLocation.lat},${userLocation.lng}`
+          : 'doctors near me';
+      setMapQuery(mq);
+
     } catch (err) {
       console.error('[FindDoctor] Fetch error:', err);
       setError('Unable to reach medical database. Showing fallback data.');
@@ -76,6 +87,17 @@ const FindDoctor = () => {
       fetchDoctors(query);
     }
   }, [userLocation, query, fetchDoctors]);
+
+  // Build Google Maps Embed URL
+  const getMapEmbedUrl = () => {
+    if (!GOOGLE_MAPS_KEY) {
+      // Fallback: use public search embed (no key needed for basic embed)
+      const q = encodeURIComponent(mapQuery || 'doctors near me');
+      return `https://www.google.com/maps/embed/v1/search?key=AIzaSyD2LJ3k776KaAojuP49rToRYYFb0zWHcYs&q=${q}${userLocation ? `&center=${userLocation.lat},${userLocation.lng}&zoom=13` : ''}`;
+    }
+    const q = encodeURIComponent(mapQuery || 'doctors near me');
+    return `https://www.google.com/maps/embed/v1/search?key=${GOOGLE_MAPS_KEY}&q=${q}${userLocation ? `&center=${userLocation.lat},${userLocation.lng}&zoom=13` : ''}`;
+  };
 
   return (
     <div className="find-doctor">
@@ -99,6 +121,26 @@ const FindDoctor = () => {
         {usingMockData && (
           <div className="mock-data-notice animate-fadeIn">
             📍 Showing sample data (Google Maps API key not configured or unavailable)
+          </div>
+        )}
+
+        {/* ── Google Maps Embed ── */}
+        {mapQuery && (
+          <div className="fd-map-section animate-fadeIn">
+            <div className="fd-map-header">
+              <FiMap />
+              <span>Map Results for: <strong>{mapQuery}</strong></span>
+            </div>
+            <div className="fd-map-wrapper">
+              <iframe
+                title="Find Doctor Map"
+                src={getMapEmbedUrl()}
+                className="fd-map-iframe"
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
           </div>
         )}
 

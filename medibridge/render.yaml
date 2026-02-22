@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: medibridge-backend
+    env: node
+    region: singapore # You can change this to your preferred region
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: FRONTEND_URL
+        sync: false # Set this to your Vercel URL (e.g., https://xxx.vercel.app)
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: MEDIUS_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY_MEDICAL
+        sync: false
+      - key: HUGGINGFACE_API_KEY
+        sync: false
+      - key: XRAY_OPENROUTER_API_KEY
+        sync: false

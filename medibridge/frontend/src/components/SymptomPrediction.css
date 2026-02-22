@@ -237,109 +237,54 @@
 
 /* ── "Metallic Glass" Card Style ── */
 .illness-card {
-  background: #111118 !important;
-  /* Solid metallic dark */
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(145deg, rgba(20, 20, 28, 0.9) 0%, rgba(10, 10, 15, 0.95) 100%) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1.5rem;
-  /* Match reference */
-  padding: 1.25rem;
+  padding: 1.5rem;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: row;
-  gap: 1rem;
+  gap: 1.25rem;
   align-items: flex-start;
   min-height: 140px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.6);
   opacity: 1 !important;
   visibility: visible !important;
 }
 
 .illness-card:hover {
   transform: translateY(-5px);
-  border-color: var(--accent-purple, #a855f7);
-  box-shadow: 0 10px 30px rgba(168, 85, 247, 0.15);
+  border-color: var(--accent-purple);
+  background: linear-gradient(145deg, rgba(26, 26, 36, 0.95) 0%, rgba(15, 15, 25, 1) 100%) !important;
+  box-shadow:
+    0 20px 50px -12px rgba(0, 0, 0, 0.8),
+    0 0 20px rgba(192, 38, 211, 0.25);
 }
 
 .illness-icon {
   font-size: 2.5rem;
-  /* Classic size */
-  width: 64px;
-  height: 64px;
-  background: rgba(168, 85, 247, 0.1);
-  border-radius: 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
 }
 
 .illness-content {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  min-width: 0;
 }
 
-.illness-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.illness-info h4 {
+.illness-content h3 {
   font-size: 1.25rem;
-  font-weight: 700;
-  color: #fff;
-  margin: 0;
-}
-
-.illness-specialty {
-  font-size: 0.75rem;
-  color: var(--accent-magenta);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.match-percentage {
-  background: linear-gradient(135deg, #7c3aed, #c026d3);
-  padding: 0.25rem 0.75rem;
-  border-radius: 2rem;
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: #fff;
-  white-space: nowrap;
-}
-
-.disclaimer-modern {
-  margin-top: 5rem;
-  padding: 2.5rem 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  animation: sp-fadeIn 0.8s ease-out;
-}
-
-.disclaimer-title {
-  font-size: 1rem;
   font-weight: 700;
   color: #fff;
   margin-bottom: 0.5rem;
 }
 
-.disclaimer-modern p {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  line-height: 1.6;
-  max-width: 800px;
-}
-
-.illness-desc {
+.illness-content p {
   font-size: 0.9rem;
   color: var(--text-secondary);
   line-height: 1.5;
+  margin-bottom: 1rem;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -347,19 +292,24 @@
   overflow: hidden;
 }
 
-.illness-card-footer-meta {
+.illness-meta {
   display: flex;
-  justify-content: space-between;
+  gap: 0.75rem;
   align-items: center;
-  margin-top: auto;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.view-more {
-  font-size: 0.8rem;
+.severity-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  color: var(--accent-teal);
+  text-transform: uppercase;
+}
+
+.specialty {
+  font-size: 0.85rem;
+  color: var(--accent-purple);
+  font-weight: 600;
 }
 
 /* ── Severity Colors ── */

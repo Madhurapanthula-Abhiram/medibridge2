@@ -13,6 +13,7 @@ import DoctorFinder from './pages/DoctorFinder';
 import ProfilePage from './components/ProfilePage';
 import HistoryPage from './components/HistoryPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import XRayPrediction from './pages/XRayPrediction';
 import './App.css';
 
 // Home with all components
@@ -129,6 +130,7 @@ function App() {
           <Route path="/symptom-checker" element={<SymptomCheckerPage />} />
           <Route path="/doctor-finder" element={<DoctorFinderPage />} />
           <Route path="/find-doctor" element={<DoctorFinderPage />} />
+          <Route path="/x-ray-prediction" element={<XRayPrediction />} />
 
           <Route
             path="/profile"

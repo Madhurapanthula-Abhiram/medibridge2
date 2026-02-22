@@ -3,7 +3,7 @@ const router = express.Router();
 const axios = require('axios');
 
 // Use the user's specific OpenRouter API key
-const OPENROUTER_API_KEY = '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';
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 // Chatbot endpoint
 router.post('/chat', async (req, res) => {
@@ -88,7 +88,7 @@ GUIDELINES:
   } catch (error) {
     console.error('Chatbot API Error:', error.message);
     console.error('Error details:', error.response?.data);
-    
+
     // Fallback response for API issues
     if (error.response?.status === 401 || !OPENROUTER_API_KEY) {
       return res.json({

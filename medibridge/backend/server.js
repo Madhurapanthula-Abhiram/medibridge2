@@ -16,8 +16,12 @@ const predictionRoutes = require('./routes/prediction');
 const doctorRoutes = require('./routes/doctor');
 const chatbotRoutes = require('./routes/chatbot');
 const predictSymptomsRoutes = require('./routes/predictSymptoms');
+const xRayPredictionRoutes = require('./routes/xRayPrediction');
 
 const app = express();
+
+// Trust proxy - Required for Render/Vercel to get correct IP for rate limiting
+app.set('trust proxy', 1);
 
 // ── Security ─────────────────────────────────────────────────────────────────
 app.use(helmet());
@@ -55,6 +59,7 @@ app.use('/api/illnesses', illnessRoutes);
 app.use('/api/predict', predictionRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/predict-xray', xRayPredictionRoutes);
 app.use('/api', predictSymptomsRoutes);
 
 // ── Health check ──────────────────────────────────────────────────────────────

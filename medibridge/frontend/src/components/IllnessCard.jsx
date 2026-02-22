@@ -26,31 +26,19 @@ const IllnessCard = ({ illness, onClick }) => {
 
     return (
         <div
-            className={`illness-card glass-card severity-${severityClass}`}
+            className={`illness-card glass-card animate-in severity-${severityClass}`}
             onClick={() => onClick(illness)}
         >
             <div className="illness-icon">{getIcon(illness.name)}</div>
 
             <div className="illness-content">
-                <div className="illness-card-header">
-                    <div className="illness-info">
-                        <h4>{illness.name}</h4>
-                        <span className="illness-specialty">{illness.specialty}</span>
-                    </div>
-                    <div className="illness-match">
-                        <span className="match-percentage">{illness.confidence}% Match</span>
-                    </div>
-                </div>
-
-                <div className="illness-card-body">
-                    <p className="illness-desc">{illness.description}</p>
-                </div>
-
-                <div className="illness-card-footer-meta">
-                    <span className={`severity-badge badge-${severityClass}`}>
-                        {illness.severity} SEVERITY
+                <h3>{illness.name}</h3>
+                <p>{illness.description}</p>
+                <div className="illness-meta">
+                    <span className={`severity-badge ${severityClass}`}>
+                        {illness.severity}
                     </span>
-                    <span className="view-more">View Care Plan →</span>
+                    <span className="specialty">{illness.specialty}</span>
                 </div>
             </div>
         </div>

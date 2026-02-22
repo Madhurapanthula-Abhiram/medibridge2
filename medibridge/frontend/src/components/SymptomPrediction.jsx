@@ -107,6 +107,13 @@ const SymptomPrediction = () => {
         <div className="section-title animate-on-scroll">
           <h2>Health <span className="text-gradient">Analyzer</span></h2>
           <p>Describe your symptoms for an AI-powered medical analysis and care plan guidance.</p>
+          <button
+            className="btn btn-outline mt-4"
+            onClick={() => window.location.href = '/x-ray-prediction'}
+            style={{ marginTop: '1.5rem', borderRadius: '2rem', padding: '0.75rem 2rem' }}
+          >
+            Predict with X-Ray
+          </button>
         </div>
 
         <div className="prediction-container">
