@@ -37,10 +37,12 @@ app.use('/api/', limiter);
 // ── CORS ──────────────────────────────────────────────────────────────────────
 app.use(cors({
   origin: [
-    process.env.FRONTEND_URL || 'http://localhost:3001',
+    process.env.FRONTEND_URL,
+    /\.vercel\.app$/, // Allow all Vercel preview/production deployments
     'http://localhost:3000',
+    'http://localhost:3001',
     'http://localhost:5173'
-  ],
+  ].filter(Boolean),
   credentials: true
 }));
 
