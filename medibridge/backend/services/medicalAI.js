@@ -4,9 +4,10 @@ const API_KEY = process.env.OPENROUTER_API_KEY_MEDICAL;
 const BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 const MODELS = [
-    'arcee-ai/trinity-mini:free',
-    'openai/gpt-oss-20b:free',
-    'nvidia/nemotron-3-nano-30b-a3b:free'
+    'google/gemma-2-9b-it:free',
+    'meta-llama/llama-3-8b-instruct:free',
+    'mistralai/mistral-7b-instruct:free',
+    'arcee-ai/trinity-mini:free'
 ];
 
 const SYSTEM_PROMPT = `You are a medical AI assistant.
@@ -156,21 +157,37 @@ async function predictSymptoms(symptomText) {
     const hasEmergency = emergencyKeywords.some(kw => lowerInput.includes(kw));
 
     let finalResult = null;
+    let fallbackPerformed = false;
 
+    // First pass: Try each model once (Fastest path)
     for (const model of MODELS) {
-        for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+            const result = await callModel(model, symptomText);
+            if (result) {
+                finalResult = result;
+                break;
+            }
+        } catch (err) {
+            console.error(`[MedicalAI] Skip ${model} due to error:`, err.message);
+        }
+    }
+
+    // Second pass: If all failed, retry with a slightly longer timeout or a specific fallback
+    if (!finalResult) {
+        console.warn('[MedicalAI] First pass failed, trying fallback attempt...');
+        for (const model of MODELS.slice(0, 2)) {
             try {
+                // Short sleep before retry to clear rate limits
+                await new Promise(r => setTimeout(r, 1000));
                 const result = await callModel(model, symptomText);
                 if (result) {
                     finalResult = result;
                     break;
                 }
             } catch (err) {
-                console.error(`[MedicalAI] Error with ${model}:`, err.message);
-                if (err.response?.status === 429) await new Promise(r => setTimeout(r, 2000));
+                // ignore
             }
         }
-        if (finalResult) break;
     }
 
     if (!finalResult) {

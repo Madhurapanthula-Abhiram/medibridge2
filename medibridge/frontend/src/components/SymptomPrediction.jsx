@@ -67,10 +67,7 @@ const SymptomPrediction = () => {
 
     try {
       const token = getToken();
-      const url = `${API_BASE}/predict-symptoms`;
-      console.log(`[SymptomPrediction] Calling API: ${url}`);
-
-      const response = await fetch(url, {
+      const response = await fetch(`${API_BASE}/predict-symptoms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,13 +77,11 @@ const SymptomPrediction = () => {
       });
 
       if (!response.ok) {
-        const err = await response.json().catch(() => ({ message: `HTTP ${response.status}` }));
-        console.error('[SymptomPrediction] API Error:', response.status, err);
+        const err = await response.json();
         throw new Error(err.message || `HTTP ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('[SymptomPrediction] Success:', data);
 
       // Handle Emergency Override (if backend didn't catch it or for consistency)
       if (hasEmergency || data.isEmergency) {
@@ -99,7 +94,7 @@ const SymptomPrediction = () => {
       setPrediction(data);
       savePredictionToHistory(data);
     } catch (err) {
-      console.error('[SymptomPrediction] Network/Request error:', err);
+      console.error('[SymptomPrediction] error:', err);
       setError(err.message || 'Unable to connect to service. Please try again.');
     } finally {
       setLoading(false);

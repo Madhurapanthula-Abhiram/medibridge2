@@ -12,6 +12,19 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, user, profile, logout } = useAuth();
+  const [imgError, setImgError] = useState(false);
+
+  // Debug: Log profile changes
+  useEffect(() => {
+    if (profile) {
+      console.log('[Header] Current Profile Data:', profile);
+    }
+  }, [profile]);
+
+  // Reset image error state if the source path changes
+  useEffect(() => {
+    setImgError(false);
+  }, [profile?.avatar, profile?.avatar_url, user?.user_metadata?.avatar_url]);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -50,9 +63,15 @@ const Header = () => {
     navigate('/');
   };
 
-  const displayName = profile?.full_name || profile?.name || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
+  const displayName = profile?.full_name || profile?.name || user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const avatarLetter = displayName.charAt(0).toUpperCase();
-  const avatarSrc = profile?.avatar || profile?.avatar_url || profile?.profile_pic || profile?.picture || profile?.image || user?.user_metadata?.avatar_url || user?.user_metadata?.picture || profile?.image_url;
+
+  // Prioritize the profile avatar from our backend, then fallback to Supabase/OAuth metadata
+  const avatarSrc = profile?.avatar ||
+    profile?.avatar_url ||
+    profile?.image_url ||
+    user?.user_metadata?.avatar_url ||
+    user?.user_metadata?.picture;
 
   return (
     <header className={`header ${isScrolled ? 'header-scrolled' : ''}`}>
@@ -97,8 +116,18 @@ const Header = () => {
               >
                 <div className="avatar-ring">
                   <div className="avatar-circle">
-                    {avatarSrc ? (
-                      <img src={avatarSrc} alt="Avatar" className="avatar-img-small" />
+                    {(avatarSrc && !imgError) ? (
+                      <img
+                        src={avatarSrc}
+                        alt="Avatar"
+                        className="avatar-img-small"
+                        key={avatarSrc}
+                        onError={(e) => {
+                          console.error('[Header] Avatar failed to load:', avatarSrc);
+                          setImgError(true);
+                        }}
+                        onLoad={() => console.log('[Header] Avatar loaded successfully')}
+                      />
                     ) : (
                       avatarLetter
                     )}
@@ -110,8 +139,13 @@ const Header = () => {
                 <div className="profile-dropdown">
                   <div className="dropdown-header">
                     <div className="dropdown-avatar">
-                      {avatarSrc ? (
-                        <img src={avatarSrc} alt="Avatar" className="avatar-img-dropdown" />
+                      {(avatarSrc && !imgError) ? (
+                        <img
+                          src={avatarSrc}
+                          alt="Avatar"
+                          className="avatar-img-dropdown"
+                          onError={() => setImgError(true)}
+                        />
                       ) : (
                         avatarLetter
                       )}
