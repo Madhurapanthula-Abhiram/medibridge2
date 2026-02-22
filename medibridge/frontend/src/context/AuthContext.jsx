@@ -38,18 +38,21 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // ── Fetch extended profile from backend ─────────────────────────────────────
   const fetchProfile = async (token) => {
     try {
+      console.log(`[AuthContext] Fetching profile from: ${API_URL}/profile`);
       const res = await fetch(`${API_URL}/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        console.error('[AuthContext] Profile fetch error:', res.status, errData);
       }
     } catch (err) {
-      console.warn('[AuthContext] Profile fetch failed:', err.message);
+      console.warn('[AuthContext] Profile fetch aborted/failed:', err.message);
     }
   };
 
