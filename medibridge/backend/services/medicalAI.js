@@ -4,57 +4,69 @@ const API_KEY = process.env.OPENROUTER_API_KEY_MEDICAL;
 const BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 const MODELS = [
-    'google/gemma-2-9b-it:free',
-    'meta-llama/llama-3-8b-instruct:free',
-    'mistralai/mistral-7b-instruct:free',
-    'arcee-ai/trinity-mini:free'
+    'nvidia/nemotron-3-nano-30b-a3b:free',
+    'arcee-ai/trinity-mini:free',
+    'openai/gpt-oss-20b:free'
 ];
 
-const SYSTEM_PROMPT = `You are a medical AI assistant.
-Rules:
-* Provide top 3 possible illnesses
-* For each illness, include:
-  - name: Disease Name
-  - description: Very short 1-sentence description
-  - specialty: Medical specialty (e.g. Cardiologist, Dermatologist)
-  - severity: Low, Moderate, High, or Emergency
-  - confidence: Percentage (e.g. 85)
-  - symptoms: List of 4-6 common symptoms
-  - firstAid: List of 3-4 home remedies or immediate actions
-  - carePlan: {
-      medications: MUST provide exactly 3 common OTC/Safe medications as objects { name, usage, purpose, guidance }. 
-    }
-  - emergencySigns: List of red flag signs to seek urgent help
-* Never suggest prescription drugs
-* Be medically conservative
-* Output valid JSON only, no markdown, no explanation outside JSON
+const SYSTEM_PROMPT = `You are a professional medical diagnostic AI. Your task is to analyze patient symptoms and return a structured JSON report.
 
-Response Format (respond ONLY with this JSON, nothing else):
+CRITICAL RULES:
+1. OUTPUT ONLY RAW JSON. NO MARKDOWN. NO CODE BLOCKS. NO EXPLANATIONS.
+2. Provide exactly top 3 possible illnesses.
+3. For each illness, follow this EXACT schema:
+   - name: Disease Name
+   - description: 1-sentence patient-friendly description
+   - specialty: Medical specialty (e.g., Cardiologist, Dermatologist)
+   - severity: "Low", "Moderate", "High", or "Emergency"
+   - confidence: Integer 0-100 (Be realistic)
+   - symptoms: MUST provide exactly 4-6 common symptoms as a list of strings.
+   - firstAid: MUST provide exactly 4-5 home remedies or immediate next steps as a list of strings.
+   - carePlan: { 
+       "medications": [
+         { "name": "Med 1", "usage": "...", "purpose": "...", "guidance": "..." },
+         { "name": "Med 2", "usage": "...", "purpose": "...", "guidance": "..." },
+         { "name": "Med 3", "usage": "...", "purpose": "...", "guidance": "..." }
+       ] 
+     } (MUST PROVIDE EXACTLY 3 COMMON OTC MEDICATIONS)
+   - emergencySigns: MUST provide exactly 4 clear points explaining when to see a doctor or seek urgent care.
+
+4. USE SAFE OVER-THE-COUNTER (OTC) MEDICATIONS ONLY. Never suggest prescription drugs.
+5. BE MEDICALLY CONSERVATIVE.
+
+EXAMPLE RESPONSE:
 {
   "success": true,
-  "extractedSymptoms": ["list"],
+  "extractedSymptoms": ["cough", "fever"],
   "predictions": [
     {
-      "name": "...",
-      "description": "...",
-      "specialty": "...",
-      "severity": "...",
-      "confidence": 85,
-      "symptoms": ["..."],
-      "firstAid": ["..."],
-      "carePlan": {
+      "name": "Common Cold",
+      "description": "A viral infection of your nose and throat.",
+      "specialty": "General Physician",
+      "severity": "Low",
+      "confidence": 90,
+      "symptoms": ["Runny nose", "Sore throat", "Congestion", "Mild fever"],
+      "firstAid": ["Stay hydrated", "Get plenty of rest", "Use saline nasal drops", "Gargle with salt water"],
+      "carePlan": { 
         "medications": [
-          { "name": "Tablet A", "usage": "...", "purpose": "...", "guidance": "..." },
-          { "name": "Tablet B", "usage": "...", "purpose": "...", "guidance": "..." },
-          { "name": "Tablet C", "usage": "...", "purpose": "...", "guidance": "..." }
-        ]
+          { "name": "Paracetamol", "usage": "500-1000mg every 6 hours", "purpose": "Fever/Aches", "guidance": "Max 4g/day" },
+          { "name": "Guaifenesin", "usage": "400mg every 12 hours", "purpose": "Cough Relief", "guidance": "Drink plenty of water" },
+          { "name": "Diphenhydramine", "usage": "25-50mg before bed", "purpose": "Sleep/Congestion", "guidance": "May cause drowsiness" }
+        ] 
       },
-      "emergencySigns": ["..."]
+      "emergencySigns": [
+        "Difficulty breathing or chest tightness",
+        "Persistent high fever > 103F for 48h",
+        "Slurred speech or sudden confusion",
+        "Inability to keep down fluids/dehydration"
+      ]
     }
   ],
-  "specialization": "Primary Specialization",
-  "disclaimer": "This is not a medical diagnosis. Please consult a healthcare professional for proper medical advice."
-}`;
+  "specialization": "General Internal Medicine",
+  "disclaimer": "This is not a medical diagnosis. Consult a professional."
+}
+
+Analyze these symptoms and respond with ONLY the JSON object:`;
 
 /**
  * Extract JSON from a response that may contain markdown or extra text
@@ -62,31 +74,24 @@ Response Format (respond ONLY with this JSON, nothing else):
 function extractJSON(text) {
     if (!text || typeof text !== 'string') return null;
 
-    // Try direct parse first
-    try {
-        return JSON.parse(text);
-    } catch (e) {
-        // Continue to extraction methods
-    }
+    const trimmed = text.trim();
 
-    // Try to extract JSON from markdown code blocks
-    const codeBlockMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
+    // 1. Try stripping markdown blocks first as it is most common
+    const codeBlockMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
     if (codeBlockMatch) {
-        try {
-            return JSON.parse(codeBlockMatch[1].trim());
-        } catch (e) {
-            // Continue
-        }
+        try { return JSON.parse(codeBlockMatch[1]); } catch (e) { }
     }
 
-    // Try to find JSON object in the text
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
+    // 2. Try raw parse
+    try { return JSON.parse(trimmed); } catch (e) { }
+
+    // 3. Try finding the first '{' and last '}'
+    const startIndex = trimmed.indexOf('{');
+    const endIndex = trimmed.lastIndexOf('}');
+    if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
         try {
-            return JSON.parse(jsonMatch[0]);
-        } catch (e) {
-            // Continue
-        }
+            return JSON.parse(trimmed.substring(startIndex, endIndex + 1));
+        } catch (e) { }
     }
 
     return null;
@@ -99,10 +104,10 @@ async function callModel(model, symptomText) {
         model: model,
         messages: [
             { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: `Analyze these symptoms and respond with ONLY the JSON format specified: ${symptomText}` }
+            { role: 'user', content: `Symptoms: ${symptomText}` }
         ],
-        temperature: 0.3,
-        max_tokens: 1200
+        temperature: 0.1, // Lower temperature for more consistent JSON
+        max_tokens: 1500
     };
 
     const response = await axios.post(
@@ -112,10 +117,10 @@ async function callModel(model, symptomText) {
             headers: {
                 'Authorization': `Bearer ${API_KEY}`,
                 'Content-Type': 'application/json',
-                'HTTP-Referer': 'http://localhost:5000',
+                'HTTP-Referer': 'https://medibridge.vercel.app',
                 'X-Title': 'MediBridge Medical AI'
             },
-            timeout: 15000 // 15 second timeout
+            timeout: 45000 // Increase to 45 seconds for larger MoE models
         }
     );
 
@@ -156,37 +161,38 @@ async function predictSymptoms(symptomText) {
     const lowerInput = symptomText.toLowerCase();
     const hasEmergency = emergencyKeywords.some(kw => lowerInput.includes(kw));
 
-    let finalResult = null;
-    let fallbackPerformed = false;
+    console.log(`[MedicalAI] Starting parallel race for 3 models...`);
 
-    // First pass: Try each model once (Fastest path)
-    for (const model of MODELS) {
+    // Create parallel "racer" promises
+    // We wrap them so they only resolve if they return valid data, otherwise they reject
+    // This allows us to use Promise.any to get the FIRST SUCCESSFUL result.
+    const racers = MODELS.map(async (model) => {
         try {
             const result = await callModel(model, symptomText);
-            if (result) {
-                finalResult = result;
-                break;
+            if (result && result.success) {
+                return result;
             }
+            throw new Error(`Model ${model} returned invalid data`);
         } catch (err) {
-            console.error(`[MedicalAI] Skip ${model} due to error:`, err.message);
+            console.error(`[MedicalAI] Racer ${model} failed:`, err.message);
+            throw err; // Important: throw so Promise.any ignores this failure
         }
-    }
+    });
 
-    // Second pass: If all failed, retry with a slightly longer timeout or a specific fallback
-    if (!finalResult) {
-        console.warn('[MedicalAI] First pass failed, trying fallback attempt...');
-        for (const model of MODELS.slice(0, 2)) {
-            try {
-                // Short sleep before retry to clear rate limits
-                await new Promise(r => setTimeout(r, 1000));
-                const result = await callModel(model, symptomText);
-                if (result) {
-                    finalResult = result;
-                    break;
-                }
-            } catch (err) {
-                // ignore
-            }
+    let finalResult = null;
+
+    try {
+        // Promise.any resolves as soon as ANY of the models succeed.
+        // It is much faster than waiting for them one by one.
+        finalResult = await Promise.any(racers);
+        console.log(`[MedicalAI] Win! Result received from fastest model.`);
+    } catch (err) {
+        console.error('[MedicalAI] All parallel racers failed. Attempting one last sequential fallback...');
+        // Last ditch effort: Try Arcee again as it is the most likely to be available
+        try {
+            finalResult = await callModel('arcee-ai/trinity-mini:free', symptomText);
+        } catch (lastErr) {
+            console.error('[MedicalAI] Sequential fallback also failed.');
         }
     }
 

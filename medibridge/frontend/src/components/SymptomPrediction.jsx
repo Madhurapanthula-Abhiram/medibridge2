@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FiSearch, FiActivity, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import './SymptomPrediction.css';
@@ -19,6 +20,7 @@ const SymptomPrediction = () => {
   const [selectedIllness, setSelectedIllness] = useState(null);
   const [isEmergency, setIsEmergency] = useState(false);
   const { getToken, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   // Local Emergency Detection
   const detectEmergency = (text) => {
@@ -109,7 +111,7 @@ const SymptomPrediction = () => {
           <p>Describe your symptoms for an AI-powered medical analysis and care plan guidance.</p>
           <button
             className="btn btn-outline mt-4"
-            onClick={() => window.location.href = '/x-ray-prediction'}
+            onClick={() => navigate('/x-ray-prediction')}
             style={{ marginTop: '1.5rem', borderRadius: '2rem', padding: '0.75rem 2rem' }}
           >
             Predict with X-Ray

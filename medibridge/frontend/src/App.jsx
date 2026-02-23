@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Link } from 'react-router-dom';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Features from './components/Features';
@@ -80,23 +80,23 @@ const Footer = () => (
         <div className="footer-links">
           <div className="footer-column">
             <h4>Quick Links</h4>
-            <a href="/">Home</a>
-            <a href="/illnesses">Common Illnesses</a>
-            <a href="/find-doctor">Find Doctor</a>
-            <a href="/symptom-checker">Symptom Checker</a>
+            <Link to="/">Home</Link>
+            <Link to="/illnesses">Common Illnesses</Link>
+            <Link to="/find-doctor">Find Doctor</Link>
+            <Link to="/symptom-checker">Symptom Checker</Link>
           </div>
           <div className="footer-column">
             <h4>Company</h4>
-            <a href="/about">About Us</a>
-            <a href="/how-it-works">How It Works</a>
-            <a href="#">Contact</a>
-            <a href="#">Privacy Policy</a>
+            <Link to="/about">About Us</Link>
+            <Link to="/how-it-works">How It Works</Link>
+            <Link to="#">Contact</Link>
+            <Link to="#">Privacy Policy</Link>
           </div>
           <div className="footer-column">
             <h4>Support</h4>
-            <a href="#">Help Center</a>
-            <a href="#">FAQs</a>
-            <a href="#">Terms of Service</a>
+            <Link to="#">Help Center</Link>
+            <Link to="#">FAQs</Link>
+            <Link to="#">Terms of Service</Link>
           </div>
         </div>
       </div>

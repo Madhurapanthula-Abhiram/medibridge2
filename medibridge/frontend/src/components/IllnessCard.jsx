@@ -38,6 +38,9 @@ const IllnessCard = ({ illness, onClick }) => {
                     <span className={`severity-badge ${severityClass}`}>
                         {illness.severity}
                     </span>
+                    <span className="confidence-tag">
+                        {illness.confidence}% Match
+                    </span>
                     <span className="specialty">{illness.specialty}</span>
                 </div>
             </div>

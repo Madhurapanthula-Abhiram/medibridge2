@@ -53,7 +53,7 @@ const PredictionModal = ({ illness, onClose }) => {
                     {/* First Aid Section */}
                     <section className="modal-section">
                         <div className="section-title">
-                            <FiShield /> <span>First Aid / Home Remedies</span>
+                            <FiShield /> <span>Home Remedies / Recommended Next Steps</span>
                         </div>
                         <ul className="modal-list">
                             {illness.firstAid?.map((fa, i) => (
@@ -81,7 +81,7 @@ const PredictionModal = ({ illness, onClose }) => {
                     {illness.emergencySigns?.length > 0 && (
                         <section className="modal-section emergency-warning-box">
                             <div className="section-title text-emergency">
-                                <FiAlertTriangle /> <span>When to Seek Medical Help</span>
+                                <FiAlertTriangle /> <span>When to See a Doctor</span>
                             </div>
                             <ul className="modal-list emergency-list">
                                 {illness.emergencySigns.map((sign, i) => (
@@ -93,8 +93,8 @@ const PredictionModal = ({ illness, onClose }) => {
                 </div>
 
                 <div className="modal-footer">
-                    <button className="btn btn-primary full-width" onClick={() => window.location.href = `/doctors?query=${encodeURIComponent(illness.specialty)}`}>
-                        Find {illness.specialty} Nearby
+                    <button className="btn btn-primary full-width" onClick={() => window.location.href = `/find-doctor?query=${encodeURIComponent(illness.specialty)}`}>
+                        Find Doctors/Hospitals Nearby
                     </button>
                 </div>
             </div>

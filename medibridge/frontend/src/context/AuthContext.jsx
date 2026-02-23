@@ -106,6 +106,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ── Sign in with Google ────────────────────────────────────────────────────
+  const signInWithGoogle = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message || 'Network error' };
+    }
+  };
+
   // ── Update Profile (via backend API) ────────────────────────────────────────
   const updateProfile = async (updates) => {
     try {
@@ -148,7 +164,8 @@ export const AuthProvider = ({ children }) => {
       logout,
       forgotPassword,
       updateProfile,
-      getToken
+      getToken,
+      signInWithGoogle
     }}>
       {children}
     </AuthContext.Provider>

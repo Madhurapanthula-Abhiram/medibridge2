@@ -47,42 +47,56 @@ GUIDELINES:
       });
     }
 
-    console.log(`Backend: Calling OpenRouter with model: nvidia/nemotron-3-nano-30b-a3b:free`);
+    const CHAT_MODELS = [
+      "nvidia/nemotron-3-nano-30b-a3b:free",
+      "mistralai/mistral-7b-instruct:free",
+      "meta-llama/llama-3.1-8b-instruct:free"
+    ];
 
-    // API call with reasoning
-    const response = await axios.post(
-      'https://openrouter.ai/api/v1/chat/completions',
-      {
-        model: "nvidia/nemotron-3-nano-30b-a3b:free",
-        messages: chatMessages,
-        reasoning: { enabled: true },
-        temperature: 0.3,
-        max_tokens: 400,
-        top_p: 0.9
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'http://localhost:5000',
-          'X-Title': 'MediBridge'
-        },
-        timeout: 30000
+    let assistantMessage = null;
+    let usedModel = "";
+
+    for (const model of CHAT_MODELS) {
+      try {
+        console.log(`Backend: Calling Medron Chatbot with model: ${model}`);
+        const response = await axios.post(
+          'https://openrouter.ai/api/v1/chat/completions',
+          {
+            model: model,
+            messages: chatMessages,
+            temperature: 0.3,
+            max_tokens: 600,
+            top_p: 0.9
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+              'Content-Type': 'application/json',
+              'HTTP-Referer': 'http://localhost:5000',
+              'X-Title': 'MediBridge'
+            },
+            timeout: 25000
+          }
+        );
+
+        if (response.data.choices?.[0]?.message) {
+          assistantMessage = response.data.choices[0].message;
+          usedModel = model;
+          break;
+        }
+      } catch (err) {
+        console.error(`Chatbot model ${model} failed:`, err.message);
       }
-    );
-
-    if (!response.data.choices || !response.data.choices[0]) {
-      throw new Error('Invalid response structure from OpenRouter');
     }
 
-    // Extract assistant message with reasoning_details
-    const assistantMessage = response.data.choices[0].message;
-    console.log('Chatbot API: AI response received with reasoning');
+    if (!assistantMessage) {
+      throw new Error('All chatbot models failed');
+    }
 
     res.json({
       text: assistantMessage.content,
       reasoning_details: assistantMessage.reasoning_details,
-      model: 'nvidia/nemotron-3-nano-30b-a3b:free'
+      model: usedModel
     });
 
   } catch (error) {

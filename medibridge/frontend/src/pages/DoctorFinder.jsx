@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import { FiSearch, FiMapPin, FiPhone, FiStar, FiNavigation, FiActivity, FiX, FiExternalLink, FiClock, FiFilter } from 'react-icons/fi';
 import './DoctorFinder.css';
@@ -33,6 +34,7 @@ const DoctorFinder = () => {
   });
   const [showFilters, setShowFilters] = useState(false);
   const sectionRef = useRef(null);
+  const location = useLocation();
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
@@ -63,7 +65,7 @@ const DoctorFinder = () => {
     }
   }, []);
 
-  const performSearch = async (type) => {
+  const performSearch = useCallback(async (type, queryOverride = null) => {
     if (!userLocation) {
       console.warn('No user location available for search');
       return;
@@ -80,10 +82,10 @@ const DoctorFinder = () => {
         radius: filters.distance * 1000, // Convert km to meters
       });
 
-      if (type === 'doctor' && specialty) {
-        params.append('specialty', specialty);
-      } else if (type === 'doctor' && searchQuery) {
-        params.append('specialty', searchQuery);
+      const activeQuery = queryOverride || searchQuery || specialty;
+
+      if (type === 'doctor' && activeQuery) {
+        params.append('specialty', activeQuery);
       }
 
       const controller = new AbortController();
@@ -136,7 +138,16 @@ const DoctorFinder = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userLocation, filters, searchQuery, specialty]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const query = params.get('query');
+    if (query && userLocation && !loading && doctors.length === 0) {
+      setSearchQuery(query);
+      performSearch('doctor', query);
+    }
+  }, [location.search, userLocation, performSearch, loading, doctors.length]);
 
   const clearFilters = () => {
     setFilters({

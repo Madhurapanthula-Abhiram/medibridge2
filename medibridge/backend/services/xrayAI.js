@@ -1,9 +1,8 @@
 const axios = require('axios');
 
 // Dedicated X-ray API key only
-const API_KEYS = [
-    process.env.XRAY_OPENROUTER_API_KEY
-].filter(Boolean);
+const OR_API_KEY = process.env.XRAY_OPENROUTER_API_KEY || "";
+const API_KEYS = [OR_API_KEY].filter(Boolean);
 const OR_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 // ─── STEP 1: Vision models that can SEE the X-ray image ──────────────────────

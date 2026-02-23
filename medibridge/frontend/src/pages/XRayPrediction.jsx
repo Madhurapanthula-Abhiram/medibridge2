@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
-import { FiUpload, FiImage, FiSettings, FiActivity, FiAlertTriangle, FiArrowLeft, FiPlusCircle, FiShield } from 'react-icons/fi';
+import { FiUpload, FiImage, FiSettings, FiActivity, FiAlertTriangle, FiArrowLeft } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './XRayPrediction.css';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
@@ -12,6 +13,7 @@ const XRayPrediction = () => {
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
     const fileInputRef = useRef(null);
+    const { getToken, isAuthenticated } = useAuth();
     const navigate = useNavigate();
 
     const handleFileChange = (e) => {
@@ -32,31 +34,50 @@ const XRayPrediction = () => {
         }
     };
 
+    /**
+     * Requirement 1 & 2: Click event listener + Validation
+     * Requirement 3, 4, 5: FormData, /analyze-xray, async/await
+     */
     const handleUpload = async () => {
-        if (!image) return;
+        if (!image) {
+            setError('Please select an image file first.');
+            return;
+        }
 
         setLoading(true);
         setError(null);
+        setResult(null);
 
+        // Requirement 3: Use FormData correctly
         const formData = new FormData();
-        formData.append('image', image);
+        formData.append('file', image);
 
         try {
-            const response = await fetch(`${API_BASE}/predict-xray`, {
+            const token = getToken();
+            const response = await fetch(`${API_BASE}/analyze-xray`, {
                 method: 'POST',
+                headers: {
+                    ...(isAuthenticated ? { 'Authorization': `Bearer ${token}` } : {})
+                },
                 body: formData,
             });
 
             if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.message || 'Analysis failed');
+                throw new Error('Server error');
             }
 
             const data = await response.json();
-            setResult(data);
+
+            // Requirement 7: Check success flag and handle data
+            if (data.success) {
+                setResult(data);
+            } else {
+                throw new Error(data.message || 'Analysis failed');
+            }
         } catch (err) {
             console.error('[XRayPage] Error:', err);
-            setError(err.message || 'Failed to analyze X-ray. Please try again.');
+            // Requirement 8: Generic error message
+            setError('Unable to analyze the X-ray. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -102,6 +123,7 @@ const XRayPrediction = () => {
                             />
                         </div>
 
+                        {/* Start AI Analysis Button */}
                         <button
                             className="btn btn-primary upload-submit-btn"
                             disabled={!image || loading}
@@ -142,49 +164,20 @@ const XRayPrediction = () => {
                         {result && (
                             <div className="report-content animate-fadeIn">
                                 <div className="report-main">
-                                    <div className="condition-row">
-                                        <div className="condition-box">
-                                            <label>Primary Finding</label>
-                                            <h4>{result.condition}</h4>
+                                    <div className="explanation-box" style={{ marginTop: '0' }}>
+                                        <label className="report-subtitle">
+                                            <FiActivity /> AI Diagnostic Report
+                                        </label>
+                                        {/* Requirement 6: Display report text in container */}
+                                        <div className="report-text-container card-scroll">
+                                            {result.report}
                                         </div>
-                                        <div className="confidence-box">
-                                            <label>Confidence</label>
-                                            <div className="confidence-pill" style={{ '--conf': `${result.confidence}` }}>
-                                                {result.confidence}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="explanation-box">
-                                        <label><FiActivity /> Analysis Explanation</label>
-                                        <p>{result.explanation}</p>
-                                    </div>
-
-                                    <div className="specialist-box">
-                                        <label>Recommended Specialist</label>
-                                        <span className="specialty-tag">{result.specialist}</span>
                                     </div>
                                 </div>
 
-                                <div className="report-details">
-                                    <div className="detail-section">
-                                        <h5><FiPlusCircle /> Care Plan</h5>
-                                        <ul>
-                                            {result.carePlan?.map((item, i) => <li key={i}>{item}</li>)}
-                                        </ul>
-                                    </div>
-
-                                    <div className="detail-section">
-                                        <h5><FiShield /> Red Flags</h5>
-                                        <ul className="emergency-list">
-                                            {result.emergencySigns?.map((item, i) => <li key={i}>{item}</li>)}
-                                        </ul>
-                                    </div>
-                                </div>
-
-                                <div className="report-disclaimer">
+                                <div className="report-disclaimer" style={{ marginTop: '2rem' }}>
                                     <FiAlertTriangle />
-                                    <p>{result.disclaimer}</p>
+                                    <p>This AI-generated analysis is for informational purposes only. It is not a substitute for professional medical diagnosis or clinical judgment. Please consult a qualified radiologist or physician for a definitive diagnosis.</p>
                                 </div>
                             </div>
                         )}

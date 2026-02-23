@@ -13,7 +13,7 @@ const Auth = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, signup, forgotPassword } = useAuth();
+  const { login, signup, forgotPassword, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -166,6 +166,16 @@ const Auth = () => {
           </form>
 
           <div className="auth-divider"><span>or</span></div>
+
+          <button
+            type="button"
+            className="btn btn-google"
+            onClick={signInWithGoogle}
+            disabled={loading}
+          >
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
+            <span>Sign in with Google</span>
+          </button>
 
           <div className="auth-switch">
             {mode === 'login' && (

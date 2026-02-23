@@ -17,6 +17,7 @@ const doctorRoutes = require('./routes/doctor');
 const chatbotRoutes = require('./routes/chatbot');
 const predictSymptomsRoutes = require('./routes/predictSymptoms');
 const xRayPredictionRoutes = require('./routes/xRayPrediction');
+const analyzeXrayRoutes = require('./routes/analyzeXray');
 
 const app = express();
 
@@ -55,7 +56,7 @@ app.use('/api/illnesses', illnessRoutes);
 app.use('/api/predict', predictionRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/chatbot', chatbotRoutes);
-app.use('/api/predict-xray', xRayPredictionRoutes);
+app.use('/api', analyzeXrayRoutes);
 app.use('/api', predictSymptomsRoutes);
 
 // ── Health check ──────────────────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { illnesses, getCategories } from '../data/illnesses';
 import { FiSearch, FiX, FiAlertCircle, FiArrowRight } from 'react-icons/fi';
 import './CommonIllnesses.css';
@@ -146,6 +147,7 @@ const CommonIllnesses = ({ limit = 6, showViewAll = true }) => {
 };
 
 const IllnessModal = ({ illness, onClose }) => {
+  const navigate = useNavigate();
   const getSeverityColor = (severity) => {
     switch (severity) {
       case 'mild': return '#10b981';
@@ -154,6 +156,12 @@ const IllnessModal = ({ illness, onClose }) => {
       case 'chronic': return '#8b5cf6';
       default: return '#6b7280';
     }
+  };
+
+  const handleFindDoctor = () => {
+    const specialty = illness.specialty.split(',')[0].trim();
+    navigate(`/find-doctor?query=${encodeURIComponent(specialty)}`);
+    onClose();
   };
 
   return (
@@ -217,6 +225,12 @@ const IllnessModal = ({ illness, onClose }) => {
           <div className="modal-section">
             <h3>Recommended Specialist</h3>
             <p className="specialist">{illness.specialty}</p>
+          </div>
+
+          <div className="modal-section mt-4">
+            <button className="btn btn-primary w-full" onClick={handleFindDoctor}>
+              Find Doctors/Hospitals Nearby
+            </button>
           </div>
         </div>
 
