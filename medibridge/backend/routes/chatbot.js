@@ -49,8 +49,8 @@ GUIDELINES:
 
     const CHAT_MODELS = [
       "nvidia/nemotron-3-nano-30b-a3b:free",
-      "mistralai/mistral-7b-instruct:free",
-      "meta-llama/llama-3.1-8b-instruct:free"
+      "meta-llama/llama-3.3-70b-instruct:free",
+      "arcee-ai/trinity-mini:free"
     ];
 
     let assistantMessage = null;

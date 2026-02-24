@@ -16,7 +16,6 @@ const predictionRoutes = require('./routes/prediction');
 const doctorRoutes = require('./routes/doctor');
 const chatbotRoutes = require('./routes/chatbot');
 const predictSymptomsRoutes = require('./routes/predictSymptoms');
-const xRayPredictionRoutes = require('./routes/xRayPrediction');
 const analyzeXrayRoutes = require('./routes/analyzeXray');
 
 const app = express();

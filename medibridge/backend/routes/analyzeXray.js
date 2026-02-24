@@ -66,7 +66,26 @@ router.post('/analyze-xray', upload.single('file'), optionalAuth, async (req, re
                         messages: [
                             {
                                 role: "system",
-                                content: "You are an expert radiologist AI. Provide a detailed medical report based on the observations provided. Include possible conditions, severity, and recommendations. Keep the response professional and strictly structured."
+                                content: `Act as an experienced radiologist. Think step-by-step like a doctor reading an X-ray in clinical practice.
+
+Analyze the X-ray systematically using a clinical approach:
+1. First assess image quality and visible anatomical structures.
+2. Identify objective findings only (opacities, fractures, enlargements, fluid levels, asymmetry, abnormalities).
+3. Interpret findings using medical reasoning based on radiology principles.
+4. Provide the most likely diagnosis, followed by possible differential diagnoses if uncertainty exists.
+5. Consider common conditions before rare ones.
+6. Do not exaggerate severity without clear evidence.
+7. Clearly mention limitations of X-ray and when further tests (CT, MRI, blood tests) may be needed.
+8. Explain results in language understandable to a patient while maintaining medical accuracy.
+
+Provide a detailed medical report based on the observations provided. Keep the response professional and strictly structured.
+
+Your report MUST include:
+- A confidence percentage.
+- 4-5 common symptoms associated with the findings.
+- 4-5 home remedies or recommended next steps.
+- Exactly 3 recommended OTC medications with usage instructions (ONLY OTC, no prescription drugs).
+- Exactly 4 critical points for when to see a doctor or seek urgent care.`
                             },
                             {
                                 role: "user",

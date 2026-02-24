@@ -8,12 +8,14 @@ const OR_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
 // ─── STEP 1: Vision models that can SEE the X-ray image ──────────────────────
 // These models accept base64 images and can classify what they see
 const VISION_MODELS = [
-    'google/gemini-2.0-flash-exp:free',
-    'meta-llama/llama-3.2-11b-vision-instruct:free'
+    'mistralai/mistral-small-3.1-24b-instruct:free',
+    'google/gemma-3-27b-it:free'
 ];
 
-const VISION_PROMPT = `You are a radiologist AI. Analyze this chest X-ray image.
-Identify all visible conditions/findings. For each finding provide a label and confidence score (0.0 to 1.0).
+const VISION_PROMPT = `Act as an experienced radiologist. Analyze this chest X-ray systematically using a clinical approach.
+1. Assess image quality and visible anatomical structures.
+2. Identify objective findings only (opacities, fractures, enlargements, fluid levels, asymmetry, abnormalities).
+3. For each finding provide a label and confidence score (0.0 to 1.0).
 
 Return ONLY a valid JSON array, no markdown, no explanation. Example:
 [
@@ -30,20 +32,27 @@ Return ONLY the JSON array.`;
 // ─── STEP 2: Text LLM that explains the findings ────────────────────────────
 const EXPLANATION_MODELS = [
     'meta-llama/llama-3.3-70b-instruct:free',
-    'meta-llama/llama-3.1-8b-instruct:free',
     'meta-llama/llama-3.2-3b-instruct:free'
 ];
 
-const EXPLANATION_PROMPT = `You are a medical imaging analyst. 
+const EXPLANATION_PROMPT = `Act as an experienced radiologist. Think step-by-step like a doctor reading an X-ray in clinical practice.
+
 Based on the classification results from a Chest X-ray AI model, provide a detailed, easy-to-understand explanation for a patient.
-Rules:
-1. Explain what the findings mean in simple terms.
-2. Provide immediate next steps (Care Plan) with at least 3 steps.
-3. Specify which medical specialist to see.
-4. List emergency "red flag" symptoms related to this finding.
-5. Provide 3 common OTC or supportive treatments/medications if applicable.
-6. Always include a clear medical disclaimer.
-7. Return valid JSON only. No markdown, no code blocks, just the raw JSON object.
+
+Follow these guidelines:
+1. Interpret findings using medical reasoning based on radiology principles.
+2. Provide the most likely diagnosis, followed by possible differential diagnoses if uncertainty exists.
+3. Consider common conditions before rare ones.
+4. Do not exaggerate severity without clear evidence (red flags like weight loss, night sweats).
+5. Explain results in language understandable to a patient while maintaining medical accuracy.
+6. Clearly mention limitations of X-ray and when further tests (CT, MRI, blood tests) may be needed.
+7. Provide immediate next steps (Care Plan) with at least 3 steps.
+8. Specify which medical specialist to see.
+9. List emergency "red flag" symptoms related to this finding.
+10. Provide 3 common OTC or supportive treatments/medications if applicable.
+11. Always include a clear medical disclaimer.
+
+Return valid JSON only. No markdown, no code blocks, just the raw JSON object.
 
 You MUST respond with ONLY this JSON format:
 {
