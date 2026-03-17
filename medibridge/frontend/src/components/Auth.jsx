@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import './Auth.css';
@@ -13,8 +14,40 @@ const Auth = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, signup, forgotPassword, signInWithGoogle } = useAuth();
+  const { login, signup } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // If we have a success message from update-password
+    if (location.state?.message) {
+      setSuccess(location.state.message);
+    }
+
+    // Redirect if already logged in (Part 2)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        window.location.href = "/dashboard";
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [location, navigate]);
+
+  const handleGoogleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+      if (error) throw error;
+    } catch (err) {
+      console.error("Google login error:", err);
+      setError(err.message);
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -150,10 +183,10 @@ const Auth = () => {
 
             {mode === 'login' && (
               <div className="form-options">
-                <button type="button" className="forgot-password"
-                  onClick={() => switchMode('forgot')}>
+                <Link to="/forgot-password" data-testid="forgot-password-link" className="forgot-password"
+                  style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', color: 'var(--accent-teal)', cursor: 'pointer', textDecoration: 'none' }}>
                   Forgot password?
-                </button>
+                </Link>
               </div>
             )}
 
@@ -170,7 +203,7 @@ const Auth = () => {
           <button
             type="button"
             className="btn btn-google"
-            onClick={signInWithGoogle}
+            onClick={handleGoogleLogin}
             disabled={loading}
           >
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />

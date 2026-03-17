@@ -53,7 +53,7 @@ app.use('/api/favorites', favoritesRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/illnesses', illnessRoutes);
 app.use('/api/predict', predictionRoutes);
-app.use('/api/doctors', doctorRoutes);
+app.use('/api/osm-doctors', doctorRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api', analyzeXrayRoutes);
 app.use('/api', predictSymptomsRoutes);

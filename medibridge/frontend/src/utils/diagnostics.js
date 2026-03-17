@@ -13,14 +13,14 @@ export const logAppStatus = (message, type = 'info') => {
 };
 
 export const checkRequiredEnvVars = () => {
-  const required = ['VITE_API_URL'];
+  const required = ['VITE_API_URL', 'VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'];
   const missing = required.filter(v => !import.meta.env[v]);
-  
+
   if (missing.length > 0) {
     logAppStatus(`Missing env vars: ${missing.join(', ')}`, 'warn');
     return false;
   }
-  
+
   logAppStatus(`Environment variables loaded successfully`, 'success');
   return true;
 };
@@ -37,20 +37,20 @@ export const checkDOMReady = () => {
 
 export const performHealthCheck = () => {
   logAppStatus('=== MediBridge Health Check ===', 'info');
-  
+
   // Check React root
   checkDOMReady();
-  
+
   // Check environment
   checkRequiredEnvVars();
-  
+
   // Check API connectivity (non-blocking)
   const apiUrl = import.meta.env.VITE_API_URL;
   if (apiUrl) {
-    fetch(`${apiUrl}/health`, { method: 'GET', timeout: 3000 })
+    fetch(`${apiUrl}/health`, { method: 'GET' })
       .then(res => res.ok ? logAppStatus('API is reachable', 'success') : logAppStatus('API returned non-OK status', 'warn'))
       .catch(err => logAppStatus(`API unreachable: ${err.message}`, 'warn'));
   }
-  
+
   logAppStatus('=== Health Check Complete ===', 'info');
 };

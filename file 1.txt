@@ -1,0 +1,46 @@
+create a folder for frontend and keep all the frontend files in it .
+and create a backend files and keep all the api keys and env files and api model codes in it.
+and use the google maps to show the near by doctors and hosipatals use the google api key for it also show the doctor information with experience and his rating and what he is specialist in and contact information and distance from our location with good css .and use the symptom prediction model work properly so that when I enter the symptoms it shows the illness possible and tablets to use any 4 types and precatuions to take with a buttons below check for doctors and when I click on it I go to doctors page with that particular illness entered in search box and when I press enter the google maps shows the near by hospitals and with their information as I mentioned .
+and also in common illness page add some more diseases information and when I search it should give me any details of illness keep the css same for common illness page make the search work properly 
+
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/Madhurapanthula-Abhiram/medibridge
+git push -u origin main
+# Server Configuration
+PORT=5000
+NODE_ENV=development
+
+# MongoDB
+MONGODB_URI=mongodb+srv://madhurapanthulaabhir5:ArrX41A4230798160@cluster0.zpteoob.mongodb.net/medibridge
+
+# JWT Secret
+JWT_SECRET=medibridge-super-secret-jwt-key-2024
+JWT_EXPIRE=7d
+
+# Email SMTP Configuration
+EMAIL_SMTP_HOST=smtp.gmail.com
+EMAIL_SMTP_PORT=587
+EMAIL_SMTP_USER=your-email@gmail.com
+EMAIL_SMTP_PASS=your-app-password
+EMAIL_FROM=noreply@medibridge.com
+
+# Twilio SMS Configuration
+TWILIO_ACCOUNT_SID=your-twilio-account-sid
+TWILIO_AUTH_TOKEN=your-twilio-auth-token
+TWILIO_PHONE_NUMBER=your-twilio-phone-number
+
+# API Keys
+GOOGLE_MAPS_API_KEY=AIzaSyD2LJ3k776KaAojuP49rToRYYFb0zWHcYs
+MEDIUS_API_KEY=d3e20c7d4emshb7cbb7321adc144p13160djsn350d8eb6d353
+
+# OpenAI
+OPENAI_API_KEY=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
+
+# OpenRouter
+OPENROUTER_API_KEY=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
+
+# Frontend URL (for CORS)
+FRONTEND_URL=http://localhost:3001

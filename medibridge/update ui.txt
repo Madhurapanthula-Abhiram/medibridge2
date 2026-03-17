@@ -1,280 +1,149 @@
-You are a senior full-stack engineer and Google Maps API expert working on my MediBridge project.
 
-IMPORTANT RULE:
+MediBridge — X-Ray Diagnosis Module Integration
+Product Requirements Document (PRD)
 
-Do NOT break existing working pages.
-Do NOT modify global CSS unexpectedly.
-All new features must be modular and production safe.
+1. Objective
+Extend MediBridge with an AI-powered X-ray diagnosis feature allowing users to:
+- Navigate from Health Analyzer to X-ray page
+- Upload X-ray images
+- Analyze using Hugging Face models with fallback mechanism
+- Generate diagnosis, precautions, and medication suggestions
+- Display results in UI matching existing illness cards
 
------------------------------------------------------
+Implementation must be fully additive and must not modify existing CSS or functionality.
 
-PART 1 — SYMPTOM PREDICTION RESULT REDESIGN
+2. Navigation Requirements
+Add an "X Ray" button next to the Analyze button on the Health Analyzer page.
+On click navigate to /xray-diagnosis using React Router.
 
-My prediction logic already works.
+3. Frontend Requirements
+Create:
+frontend/src/pages/XrayDiagnosis.jsx
+frontend/src/pages/XrayDiagnosis.css (scoped only)
 
-I need to redesign how results are displayed.
+UI must match MediBridge theme:
+- Dark gradient background
+- Glassmorphism cards
+- Neon accents
+- Responsive layout
 
------------------------------------------------------
+Features:
+- Image upload (drag & drop + file picker)
+- Image preview
+- Analyze button with loading state
+- Results card styled like illness result UI
 
-RESULT CARDS
+4. Backend Requirements
+Create route:
+backend/routes/xrayRoutes.js
 
-After prediction:
+Endpoint:
+POST /api/xray/analyze
 
-Show multiple illness cards.
+Flow:
+Receive image → Validate → Convert buffer → Call HF models with fallback → Generate report → Return JSON
 
-Each card contains:
+5. Hugging Face Models (Best Suited with Fallback)
 
-- Illness emoji/icon
-- Illness name
-- Short description
-- Specialty type
-- Severity badge (Low / Moderate / High / Emergency)
-- Match percentage
+Primary Model (Most Accurate Multi‑Disease Chest Detection):
+- torchxrayvision/densenet121-res224-chex
 
-Cards must match modern healthcare glass UI.
+Secondary Model (Modern Transformer Vision Model):
+- codewithdark/vit-chest-xray
 
------------------------------------------------------
+Fallback Model (Lightweight Backup):
+- ianpan/chest-x-ray-basic
 
-CLICK BEHAVIOR
+Fallback Mechanism:
+System must attempt prediction in the following order:
 
-When user clicks a card:
+1. DenseNet CheXNet model
+2. ViT Chest X-ray model
+3. Basic Chest model
 
-Open a modal box (NOT new page).
+If one fails due to timeout, rate limit, or invalid response → automatically switch to next.
 
-Modal design must match provided reference style.
+All models must use the same Hugging Face API key.
 
------------------------------------------------------
+Important:
+Image models do NOT consume tokens like LLMs.
+They are request‑based inference systems.
 
-MODAL CONTENT
+6. Optional Explanation Model (Max Tokens High Intelligence)
 
-Header:
+If OpenRouter key is available, use:
 
-- Illness icon
-- Illness name
-- Specialty
-- Severity badge
-- Description
+meta-llama/llama-3.3-70b-instruct:free
 
-Sections:
+Purpose:
+- Medical explanation
+- Diagnosis report generation
+- Precautions and medication suggestions
 
-1. Common Symptoms
-2. First Aid / Home Remedies
-3. Care Plan
+This model supports very large context (~65k+ tokens depending provider).
 
-Subsection inside Care Plan:
+7. Environment Variables
 
-OTC / Medications
+HF_API_KEY=
+OPENROUTER_API_KEY= optional
 
-Each medication displayed as clickable pill button.
+8. Diagnosis Report Sections
 
------------------------------------------------------
+- Prediction
+- Confidence
+- Risk level
+- Summary
+- Detected Indicators
+- Precautions
+- When to Seek Medical Help
+- Treatment Suggestions
+- Recommended Specialist
+- Disclaimer
 
-MEDICATION INTERACTION
+9. UI Result Styling
 
-When user clicks medication:
+Must match existing illness card design:
+- Severity pill badge
+- Glass card container
+- Two-column bullet sections
+- Red alert box for medical help
+- Purple specialist text
+- Consistent spacing and typography
 
-Expand to show:
+10. Performance Requirements
 
-- Usage
-- Purpose
-- Basic guidance
+- Response under 10 seconds
+- Max image size 10MB
+- Graceful error handling
+- Retry logic for model loading
 
------------------------------------------------------
+11. Security
 
-WHEN TO SEEK MEDICAL HELP
+- File validation
+- Size checks
+- API key protection
 
-Red warning section with emergency signs.
+12. Constraints (Critical)
 
------------------------------------------------------
+- Do NOT modify existing CSS
+- Do NOT break current pages
+- Only additive modular code
+- Maintain existing routing and layout
 
-EMERGENCY DETECTION (CRITICAL)
+13. Deliverables
 
-If symptoms contain:
+Frontend:
+- XrayDiagnosis.jsx
+- XrayResultCard.jsx
 
-- chest pain
-- difficulty breathing
-- severe bleeding
-- unconsciousness
-- bluish lips
-- confusion
-- stroke symptoms
+Backend:
+- xrayRoutes.js
+- hfService.js
 
-System must:
+14. Future Enhancements
 
-1. Override severity → EMERGENCY
-2. Show emergency banner
-3. Show urgent warning
+- MRI support
+- Bone fracture detection
+- PDF report export
+- Doctor recommendations
 
-Emergency detection has higher priority than model prediction.
-
------------------------------------------------------
-
-SEVERITY COLORS
-
-Low → green
-Moderate → yellow
-High → red
-Emergency → strong red alert
-
------------------------------------------------------
-
-PART 2 — FIND DOCTORS PAGE FIX (MINI GOOGLE MAPS)
-
-Current page is incorrect.
-
-I want it to behave like Google Maps search.
-
------------------------------------------------------
-
-SEARCH INPUT
-
-Replace multiple inputs with ONE search box.
-
-Behavior same as symptom input:
-
-User types → press Enter → search executes.
-
-Examples:
-
-dentist
-hospital near me
-best hospitals in vizag
-cardiologist in delhi
-clinic in bangalore
-pharmacy near me
-
-Search must work for ANY location or medical query.
-
------------------------------------------------------
-
-BACKEND REQUIREMENT
-
-Search must go to backend server.
-
-Backend calls Google Places APIs:
-
-1. Places Text Search API
-2. Place Details API
-3. Place Photos API
-
-Frontend must NOT directly expose API key.
-
------------------------------------------------------
-
-RESULT ACCURACY
-
-Results must match Google Maps exactly.
-
-Same order
-Same names
-Same ratings
-Same places
-
-No random or dummy data allowed.
-
------------------------------------------------------
-
-DATA TO DISPLAY
-
-Each result card must include:
-
-Doctor emoji 👨‍⚕️
-
-Then:
-
-- Place name
-- Category
-- Rating ⭐
-- Review count
-- Distance
-- Address
-- Phone number
-- Opening hours
-- Open / Closed status
-- Services / types
-- Google images
-- Directions button
-- Call button
-- View on Maps link
-
-If no image → show placeholder.
-
------------------------------------------------------
-
-LOCATION HANDLING
-
-If query contains city/state:
-
-Use it directly.
-
-If query is “near me”:
-
-Use user geolocation.
-
-Must support searches across states.
-
------------------------------------------------------
-
-NO MAP DISPLAY
-
-Do NOT show map container.
-
-Only show results cards list with beautiful UI.
-
------------------------------------------------------
-
-UI DESIGN
-
-Match MediBridge theme:
-
-- Dark background
-- Glass cards
-- Gradient borders
-- Rounded corners
-- Hover animations
-- Image zoom
-
------------------------------------------------------
-
-RESULT STATES
-
-Loading → skeleton cards
-No results → message
-Error → error message
-
------------------------------------------------------
-
-PERFORMANCE
-
-Debounce search
-Cache results
-Lazy load images
-
------------------------------------------------------
-
-COMPONENTS TO CREATE
-
-Prediction:
-
-- IllnessCard
-- PredictionModal
-- MedicationItem
-
-Doctors:
-
-- DoctorCard
-- SearchBar
-- ResultsList
-
-Shared:
-
-- SkeletonLoader
-- EmergencyAlert
-
------------------------------------------------------
-
-FINAL GOAL
-
-1. Prediction page behaves like modern healthcare AI app.
-2. Find Doctors page behaves like mini Google Maps medical search.
-3. Everything works correctly after deployment.

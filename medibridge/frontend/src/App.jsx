@@ -9,6 +9,8 @@ import AboutUs from './components/AboutUs';
 import Auth from './components/Auth';
 import ResetPassword from './components/ResetPassword';
 import SymptomPrediction from './pages/SymptomPrediction';
+import ForgotPassword from './pages/ForgotPassword';
+import UpdatePassword from './pages/UpdatePassword';
 import DoctorFinder from './pages/DoctorFinder';
 import ProfilePage from './components/ProfilePage';
 import HistoryPage from './components/HistoryPage';
@@ -120,7 +122,10 @@ function App() {
           {/* Public routes */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Auth />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/update-password" element={<UpdatePassword />} />
+          <Route path="/dashboard" element={<Home />} />
+          <Route path="/reset-password" element={<UpdatePassword />} />
           <Route path="/illnesses" element={<IllnessesPage />} />
           <Route path="/how-it-works" element={<HowItWorksPage />} />
           <Route path="/about" element={<AboutPage />} />
